@@ -1,8 +1,7 @@
 ﻿# Příklad konečného automatu ve vstupním formátu úlohy DKA
 ({s, p,q,r ,nonTermState, # stav neukončující i nedostupný
 fin1}, # stav bude označen jako koncový
-{'a', '''', '{', ')', 'b','č','b', '	', ' ', '
-'},
+{'a', '''', '{', ')', 'b','č','b', '	', ' '},
  {s 'č' -> p,
 1
 q'a' -> r, q'{'-> r, r 'a' ->r, p'''' ->q ,

@@ -2,14 +2,12 @@
 
 <?php
 
-$stdin = fopen('php://stdin', 'r');
-$soubor = "";
-while(($line = fgets(STDIN)) != false){
-  $soubor = $soubor.preg_replace("/(?<!\')#(?!\').*/","", $line);
-}
+$soubor = file_get_contents("input.txt");
+$soubor = preg_replace("/(?<!\')#(?!\').*/","", $soubor);
+echo $soubor."\n\n";
 
 $soubor = preg_replace("/((?<!\')\s)|(\s(?!\'))/","", $soubor);
-echo $soubor."\n\n";
+
 $soubor = ereg_replace("''''", "'''", $soubor);
 
 
@@ -64,15 +62,12 @@ foreach($states as $state){
 echo "\n";
 echo "Alphabet: ";
 foreach($alphabet_arr[0] as $character){
-	if($character == "\t"){
-	  echo "\t";
-	}
-	if($character == " "){
-	  echo " ";
-	}
-	if($character == "\n"){
-	  echo "\n";
-	}
+	//if($character == "\t"){
+	//  echo "\t";
+	//}
+	//if($character == " "){
+	//  echo " ";
+	//}
   echo $character.", ";
 }
 echo "\n";

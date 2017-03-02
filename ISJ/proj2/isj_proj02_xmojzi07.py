@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import collections 
-from collections import Counter
+
 # for task 1, 2, 3
 eskymo = ['do', 'pre', 'du', 'du', 'do', 'za', 'du', 'du']
 
@@ -27,18 +27,10 @@ def second_task():
 
 def third_task():
     # what strings and how many times appeared in the eskymo list
-    wordfreq_eskymo = {(word ,eskymo.count(word)) for (word) in set(eskymo)};
-    print(wordfreq_eskymo);
-    print(type(wordfreq_eskymo));
-    wordfreq_eskymo = Counter(eskymo);
-    print(wordfreq_eskymo);
-    print(type(wordfreq_eskymo));
+    wordfreq_eskymo = {word : eskymo.count(word) for (word) in set(eskymo)};
     # test
-    print(''.join(word+str(freq) for (word, freq) in wordfreq_eskymo.items()));
-    print('do2pre1du4za1');
     return ''.join(word+str(freq) for (word, freq) in wordfreq_eskymo.items()) == 'do2pre1du4za1'
-    return;
-
+    
 def fourth_task():
     # for the next test
     udubutubudu = 'u dubu tu budu.'
