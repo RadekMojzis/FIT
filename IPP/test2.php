@@ -64,6 +64,15 @@ foreach($states as $state){
 echo "\n";
 echo "Alphabet: ";
 foreach($alphabet_arr[0] as $character){
+	if($character == "\t"){
+	  echo "\t";
+	}
+	if($character == " "){
+	  echo " ";
+	}
+	if($character == "\n"){
+	  echo "\n";
+	}
   echo $character.", ";
 }
 echo "\n";
