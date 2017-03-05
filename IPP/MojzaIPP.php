@@ -4,6 +4,7 @@
 $rm_e_flag = false;
 $deter_flag = false;
 $insensitive = false;
+$output = STDOUT;
 
 function validate_fsm($fsm){
   $states = $fsm[0];
@@ -29,8 +30,8 @@ function validate_fsm($fsm){
     $final_states = array_unique($final_states);
   }
   foreach($rules as $rule){
-    if(array_search($rule['startig_state'], $states)===false){
-      fwrite(STDERR, "Error - rules - undefined state: \"".$rule['startig_state']."\"!\n");
+    if(array_search($rule['starting_state'], $states)===false){
+      fwrite(STDERR, "Error - rules - undefined state: \"".$rule['starting_state']."\"!\n");
       exit(41);
     }
     if(array_search($rule['character'], $alphabet) === false && $rule['character'] != ""){
@@ -38,7 +39,7 @@ function validate_fsm($fsm){
       exit(41);
     }
     if(array_search($rule['final_state'], $states)===false){
-      fwrite(STDERR, "Error - rules - undefined state: \"".$rule['startig_state']."\"!\n");
+      fwrite(STDERR, "Error - rules - undefined state: \"".$rule['starting_state']."\"!\n");
       exit(41);
     }
   }
@@ -61,35 +62,57 @@ function determinize_fsm($fsm){
   $initial_state = $fsm[3];
   $final_states = $fsm[4];
   
-  $initial_state_deter = $initial_state
+  $initial_state_deter = $initial_state;
   $states_deter = array();
   $states_new = array(array($initial_state_deter));
   $rules_deter = array();
   $final_states_deter = array();
-  
+  $states_analysed = array(array());
   do{
-    $current_new = array_shift($states_new);
+    $current_new = $states_new[0];
+		$new_state = array();
     sort($current_new);
     $current_new_string = implode("_", $current_new);
-    
-    array_push($states_deter, $current_new);
+    if(array_search($current_new_string, $states_deter) === false){
+		  array_push($states_deter, $current_new_string);
+		}
+		
     foreach($current_new as $new_member){
-      foreach($rules as $rule){
-        if($rule['startig_state'] == $new_member){
-          array_push($rules_deter, array('starting_state' = $current_new_string, 'character' = $rule['character'], 'final_state' = $rule['final_state']));
-          if(array_search($rule['final_state'], $states_deter) === false){
-            array_push($states_new, array($rule['final_state']));
-          }
-        }
-      }
+      foreach($alphabet as $character){
+			  $changeflag = 0;
+				foreach($rules as $rule){
+					if($rule['starting_state'] == $new_member && $rule['character'] == $character){
+						if(array_search($rule['final_state'], $new_state) === false){
+							array_push($new_state, $rule['final_state']);
+
+							$changeflag = 1;
+						}
+					}
+				}
+				// add state
+				if($changeflag){
+					$new_state_string = implode("_", $new_state);
+					if(array_search( $new_state, $states_analysed) === false){
+						array_push($states_analysed, $new_state);
+						array_push($states_new, $new_state);
+					}
+					if(array_search(array('starting_state' => $current_new_string, 'character' => $character, 'final_state' => $new_state_string), $rules_deter) === false){
+						array_push($rules_deter, array('starting_state' => $current_new_string, 'character' => $character, 'final_state' => $new_state_string));
+					}
+				}
+			}
     }
-    if(array_intersect($current_new, $final_states)){
-      $final_states_deter = array_merge($final_states_deter,$current_new );
+    if(array_intersect($current_new, $final_states) != array()){
+			if(array_search($current_new_string, $final_states_deter) === false){
+				array_push($final_states_deter , $current_new_string);
+			}
     }
+		array_shift($states_new);
   }while(count($states_new) != 0);
   
-  
+  return array($states_deter, $alphabet, $rules_deter, $initial_state_deter, $final_states_deter);
 }
+
 
 function epsilon_closure($state, $rules){
   $closure_array = array($state);
@@ -97,7 +120,7 @@ function epsilon_closure($state, $rules){
     $closure_size = count($closure_array);
     foreach($rules as $rule){
       foreach( $closure_array as $closure_member){
-        if($rule['startig_state'] == $closure_member){
+        if($rule['starting_state'] == $closure_member){
           if($rule['character'] == ""){
             array_push($closure_array, $rule['final_state']);
           }
@@ -120,8 +143,8 @@ function remove_eps($fsm){
   foreach($states as $state){
     foreach(epsilon_closure($state, $rules) as $closure_member){
       foreach($rules as $rule){
-        if($closure_member == $rule['startig_state'] && $rule['character'] != ""){
-          array_push($new_rules, array('startig_state' => $state, 'character' => $rule['character'] , 'final_state' => $rule['final_state']));
+        if($closure_member == $rule['starting_state'] && $rule['character'] != ""){
+          array_push($new_rules, array('starting_state' => $state, 'character' => $rule['character'] , 'final_state' => $rule['final_state']));
         }
       }
     }
@@ -141,50 +164,49 @@ function print_fsm($fsm){
   $rules = $fsm[2];
   $initial_state = $fsm[3];
   $final_states = $fsm[4];
-
-  echo "(\n{";
+  $out = $GLOBALS['output'];
+	
+  fprintf($out, "(\n{");
   foreach($states as $state){
-    echo $state;
+    fprintf($out, "%s", $state);
     if($state != $states[count($states)-1]){
-      echo ", ";
+      fprintf($out, ", ");
     }
   }
-  echo "},\n{";
+  fprintf($out, "},\n{)");
   foreach($alphabet as $character){
     if($character == "'"){$character = "''";}
-    echo "'".$character."'";
+    fprintf($out, "'%s'", $character);
     if($character != $alphabet[count($alphabet)-1]){
-      echo ", ";
+      fprintf($out, ", ");
     }
   }
-  echo "},\n{\n";
+  fprintf($out, "},\n{\n");
   foreach($rules as $rule){
     if($rule["character"] == "'"){$rule["character"] = "''";}
-    echo $rule["startig_state"]." '".$rule["character"]."' -> ".$rule["final_state"]."\n";
+    fprintf($out, "%s '%s' -> %s\n", $rule["starting_state"], $rule["character"], $rule["final_state"]);
   }
-  echo "},\n".$initial_state.", \n{";
+  fprintf($out, "},\n%s, \n{", $initial_state);
 
   foreach($final_states as $state){
-    echo $state;
+    fprintf($out, "%s", $state);
     if($state != $final_states[count($final_states)-1]){
-      echo ", ";
+      fprintf($out, ", ");
     }
   }
-  echo "}\n)\n";
+  fprintf($out, "}\n)\n");
 }
 
 function parse_input($soubor){
   if(preg_match("/({.*},{.*},{.*},\w+,{.*})/sU", $soubor )==0){
-    echo "Invalid format!\n";
     exit(42);
   }
 
   if(preg_match_all("/(?<={).+(?=},)|(?<=,{).+(?=})/sU", $soubor, $substr_arr) == 0){
-    echo "No match found :/ \n";
+    exit(42);
   }
 
   if(count($substr_arr[0])!= 4){
-    echo "Invalid number of components!\n";
     exit(42);
   }
   
@@ -205,7 +227,7 @@ function parse_input($soubor){
     preg_match("/\w+(?=\')/", $rule, $first);
     preg_match("/(?<=\').(?=\')|(?<=\')(?=\')/suU", $rule, $character);
     preg_match("/(?<=->)\w+/", $rule, $final);
-    $rules[$i] = array('startig_state' => $first[0], 'character' => $character[0], 'final_state' => $final[0]);
+    $rules[$i] = array('starting_state' => $first[0], 'character' => $character[0], 'final_state' => $final[0]);
     $i++; 
   }
   $initial_state = $initial_state_arr[0];
@@ -232,7 +254,6 @@ function load_input(){
   $input = ereg_replace("''''", "'''", $input);
 
   if($GLOBALS['insensitive']){
-    echo "ahoj";
     $input = strtolower ( $input );
   }
   return $input;
@@ -283,13 +304,12 @@ Pokud nebude uveden parametr -e ani -d, tak dojde pouze k validaci a normalizova
   }
   if(isset($options["input"])){
     fclose(STDIN);
-     if(($STDIN = fopen($options["input"], 'r')) == false){
-       exit(2);
-     } 
+ 	  if(($STDIN = fopen($options["input"], 'r')) == false){
+	  	 exit(2);
+	  }
   }
   if(isset($options["output"])){
-    fclose(STDOUT);
-    if(($STDOUT = fopen($options["output"], 'w')) == false){
+		if(($GLOBALS['output'] = fopen($options["output"], 'w')) === false){
       exit(2);
     }
   }
@@ -306,12 +326,12 @@ validate_fsm($fsm);
 if($rm_e_flag){
   $fsm = remove_eps($fsm);
 }
-
+//print_fsm($fsm);
 if($deter_flag){
-  determinize_fsm($fsm);
+	$fsm = remove_eps($fsm);
+  $fsm = determinize_fsm($fsm);
 }
 
 print_fsm($fsm);
 
 //var_dump($rules_arr);
-echo "\n";
