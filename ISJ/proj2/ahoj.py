@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 
-import collections
+import collections 
 
 # for task 1, 2, 3
-eskymo = ['do', 'pře', 'du', 'du', 'do', 'za', 'du', 'du']
+eskymo = ['do', 'pre', 'du', 'du', 'do', 'za', 'du', 'du']
 
 
 def first_task():
     # number of all distinct strings in the eskymo list
-    vocabulary_size_eskymo = len(set(eskymo));
+
+    vocabulary_size_eskymo = len(set(eskymo));   # vase reseni
     # test
     return vocabulary_size_eskymo == 4
 
 
 def second_task():
     # for the next test
-    prepos = ['do', 'za', 'před']
+    prepos = ['do', 'za', 'pred']
 
     # all distinct strings in both the lists
     in_both_eskymo_prepos = set(eskymo).intersection(prepos);    # vase reseni
@@ -26,11 +27,10 @@ def second_task():
 
 def third_task():
     # what strings and how many times appeared in the eskymo list
-    wordfreq_eskymo = {word : eskymo.count(word) for (word) in set(eskymo)}  # vase reseni
+    wordfreq_eskymo = {word : eskymo.count(word) for (word) in set(eskymo)};
     # test
-    return ''.join(word+str(freq) for (word, freq) in wordfreq_eskymo.items()) == 'do2pře1du4za1'
-
-
+    return ''.join(word+str(freq) for (word, freq) in wordfreq_eskymo.items()) == 'do2pre1du4za1'
+    
 def fourth_task():
     # for the next test
     udubutubudu = 'u dubu tu budu.'
