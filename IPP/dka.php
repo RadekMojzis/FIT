@@ -89,7 +89,6 @@ function determinize_fsm($fsm){
 						}
 					}
 				}
-				// add state
 				if($changeflag){
 					$new_state_string = implode("_", $new_state);
 					if(array_search( $new_state, $states_analysed) === false){
@@ -173,7 +172,7 @@ function print_fsm($fsm){
       fprintf($out, ", ");
     }
   }
-  fprintf($out, "},\n{)");
+  fprintf($out, "},\n{");
   foreach($alphabet as $character){
     if($character == "'"){$character = "''";}
     fprintf($out, "'%s'", $character);
@@ -326,7 +325,7 @@ validate_fsm($fsm);
 if($rm_e_flag){
   $fsm = remove_eps($fsm);
 }
-//print_fsm($fsm);
+
 if($deter_flag){
 	$fsm = remove_eps($fsm);
   $fsm = determinize_fsm($fsm);
