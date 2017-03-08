@@ -8,14 +8,15 @@ $output = STDOUT;
 $input_file = STDIN;
 
 function validate_fsm($fsm){
-  $states = $fsm[0];
-  $alphabet = $fsm[1];
-  $rules = $fsm[2];
-  $initial_state = $fsm[3];
-  $final_states = $fsm[4];
+  $states = $fsm['states'];
+  $alphabet = $fsm['alphabet'];
+  $rules = $fsm['rules'];
+  $initial_state = $fsm['initial_state'];
+  $final_states = $fsm['final_states'];
   
   if(count($alphabet) == 0){
-      fwrite(STDERR, "Error, alphabet must not be empty!\n");
+    fwrite(STDERR, "Error, alphabet must not be empty!\n");
+    //print_fsm($fsm);  
     exit(41);
   }
   if(count(array_unique($states)) != count($states)){
@@ -49,19 +50,22 @@ function validate_fsm($fsm){
     exit(41);
   }
   foreach($final_states as $state){
+    if($state == "")
+      continue;
     if(array_search($state, $states )===false){
       fwrite(STDERR, "Error - final states - undefined state: \"".$state."\"!\n");
+    
       exit(41);
     }
   }
 }
 
 function determinize_fsm($fsm){
-  $states = $fsm[0];
-  $alphabet = $fsm[1];
-  $rules = $fsm[2];
-  $initial_state = $fsm[3];
-  $final_states = $fsm[4];
+  $states = $fsm['states'];
+  $alphabet = $fsm['alphabet'];
+  $rules = $fsm['rules'];
+  $initial_state = $fsm['initial_state'];
+  $final_states = $fsm['final_states'];
   
   $initial_state_deter = $initial_state;
   $states_deter = array($initial_state);
@@ -103,7 +107,11 @@ function determinize_fsm($fsm){
     //var_dump($states_new);
   }
   
-  return array($states_deter, $alphabet, $rules_deter, $initial_state_deter, $final_states_deter);
+  return array('states' => $states_deter, 
+               'alphabet' => $alphabet, 
+               'rules' => $rules_deter, 
+               'initial_state' => $initial_state_deter, 
+               'final_states' => $final_states_deter);
 }
 
 
@@ -126,11 +134,11 @@ function epsilon_closure($state, $rules){
 }
 
 function remove_eps($fsm){
-  $states = $fsm[0];
-  $alphabet = $fsm[1];
-  $rules = $fsm[2];
-  $initial_state = $fsm[3];
-  $final_states = $fsm[4];
+  $states = $fsm['states'];
+  $alphabet = $fsm['alphabet'];
+  $rules = $fsm['rules'];
+  $initial_state = $fsm['initial_state'];
+  $final_states = $fsm['final_states'];
   
   $new_rules = array();
   foreach($states as $state){
@@ -148,15 +156,15 @@ function remove_eps($fsm){
       array_push($new_final_states, $state);
     }
   }
-  return array($states, $alphabet, $new_rules, $initial_state, $new_final_states);
+  return array('states' => $states, 'alphabet' => $alphabet, 'rules' => $new_rules, 'initial_state' => $initial_state, 'final_states' => $new_final_states);
 }
 
 function print_fsm($fsm){
-  $states = $fsm[0];
-  $alphabet = $fsm[1];
-  $rules = $fsm[2];
-  $initial_state = $fsm[3];
-  $final_states = $fsm[4];
+  $states = $fsm['states'];
+  $alphabet = $fsm['alphabet'];
+  $rules = $fsm['rules'];
+  $initial_state = $fsm['initial_state'];
+  $final_states = $fsm['final_states'];
   $out = $GLOBALS['output'];
 	
   fprintf($out, "(\n{");
@@ -192,14 +200,22 @@ function print_fsm($fsm){
 
 function parse_input($soubor){
   if(preg_match("/({.*},{.*},{.*},\w+,{.*})/sU", $soubor )==0){
+    fwrite(STDERR, "invalid pattern!\n");
     exit(41);
   }
 
-  if(preg_match_all("/(?<={).+(?=},)|(?<=,{).+(?=})/sU", $soubor, $substr_arr) == 0){
+  if(preg_match_all("/(?<={).*(?=},)|(?<=,{).*(?=})/sU", $soubor, $substr_arr) == 0){
+    var_dump($substr_arr);
+    fwrite(STDERR, "something went wrong :(!\n");
     exit(41);
   }
-
+  if(count($substr_arr[0]) == 5){
+    $substr_arr[0][3] = "";
+    array_pop($substr_arr[0]);
+  }
+  
   if(count($substr_arr[0])!= 4){
+    var_dump($substr_arr);
     exit(41);
   }
   
@@ -208,11 +224,11 @@ function parse_input($soubor){
   $alphabet_str = $substr_arr[0][1];
   $rules_str = $substr_arr[0][2];
   $final_states_str = $substr_arr[0][3];
-
-  preg_match_all ("/((?<=,\').(?=\',))|((?<=^\').(?=\',))|((?<=,\').(?=\'$))/suU" , $alphabet_str, $alphabet_arr);
+  
+  preg_match_all ("/((?<=,\').(?=\',))|((?<=^\').(?=\',))|((?<=,\').(?=\'$))|((?<=^\').(?=\'$))/suU" , $alphabet_str, $alphabet_arr);
   $states = explode("," , $states_str);
   $alphabet = $alphabet_arr[0];
-  
+  $rules = array();
   preg_match_all("/((?<=,)\w+\'.?\'->\w+(?=,))|((?<=,)\w+\'.?\'->\w+(?=$))|((?<=^)\w+\'.?\'->\w+(?=,))/suU", $rules_str, $rules_arr_setup);
   
   $i = 0;
@@ -231,7 +247,11 @@ function parse_input($soubor){
   array_multisort(($rules));
   sort($final_states);
     
-  return array($states, $alphabet, $rules, $initial_state, $final_states);
+  return array('states' => $states,
+               'alphabet' => $alphabet, 
+               'rules' => $rules, 
+               'initial_state' => $initial_state, 
+               'final_states' => $final_states);
 }
 
 function load_input(){
