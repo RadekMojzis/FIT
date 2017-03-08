@@ -1,5 +1,4 @@
-# priklad http://www.cs.odu.edu/~toida/nerzic/390teched/regular/fa/nfa-2-dfa.html
-( {s0, s1, s2, s3, s4}, 
+﻿( {s0, s1, s2, s3, s4}, 
   {'a', 'b'}, 
   {
     s0 'a' -> s1, 
