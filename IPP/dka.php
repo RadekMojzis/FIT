@@ -78,7 +78,7 @@ function determinize_fsm($fsm){
 		foreach ($alphabet as $character) {
       $final = false;
       $tmp_state = array ();
-      foreach($states as $state){
+      foreach($current_new as $state){
         foreach($rules as $rule){
           if ($rule['character'] == $character && $rule['starting_state'] == $state && !in_array($rule['final_state'], $tmp_state)) {
 						array_push($tmp_state, $rule['final_state']);
