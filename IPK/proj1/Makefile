@@ -1,0 +1,21 @@
+all : client server clear
+
+CC = g++
+
+client.o: client.cpp
+	$(CC) $^ -c
+server.o: server.cpp
+	$(CC) $^ -c
+packet.o: packet.cpp
+	$(CC) $^ -c
+socket.o: socket.cpp
+	$(CC) $^ -c
+
+client: client.o packet.o socket.o
+	$(CC) client.o packet.o socket.o -o $@
+  
+server: server.o packet.o socket.o
+	$(CC) server.o packet.o socket.o -o $@
+
+clear: 
+	rm *.o
