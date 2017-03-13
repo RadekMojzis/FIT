@@ -17,14 +17,16 @@ using namespace std;
 class Socket{
   private:
     int socket_number;
-		struct sockaddr_in6 server_address;
+    struct sockaddr_in server_address;
 		
   public:
-    Socket();
 		~Socket();
-		int number(){return socket_number;}
-    bool setup(string address, int port);
-    bool setup_server(int port);
+		int number();
+    bool connect(string address, int port);
+    bool listen(int port);
+    bool init();
+    bool Accept(Socket welcome_socket);
+    void Close();
     //bool send(Packet packet);
     //bool receave(Packet packet);
 };

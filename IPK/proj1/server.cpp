@@ -13,38 +13,48 @@ using namespace std;
 int main (int argc, const char * argv[]) {
 	cout << "starting\n";
 	Socket welcome_socket;
+  welcome_socket.init();
 	cout << "socket set up.. \n";
-	if(welcome_socket.setup_server(6699))
+	if(welcome_socket.listen(6666))
 		return 1;
-	char str[INET6_ADDRSTRLEN];
-	struct sockaddr_in6 sa_client;
-	while(1){
-		socklen_t sa_client_len = sizeof(sa_client);
-		int comm_socket = accept(welcome_socket.number(), (struct sockaddr*)&sa_client, &sa_client_len);		
-		if (comm_socket > 0)
-		{
-			if(inet_ntop(AF_INET6, &sa_client.sin6_addr, str, sizeof(str))) {
+  
+  cout << "server set, waiting for connection..\n";
+	char str[INET_ADDRSTRLEN];
+	struct sockaddr_in sa_client;
+  Socket comm_socket;
+  while(1){
+    cout << "welcome socket: " << welcome_socket.number() << "\n";
+    comm_socket.Accept(welcome_socket);
+    
+    /*socklen_t sa_client_len = sizeof(sa_client);
+    
+    int comm_socket = accept(welcome_socket.number(), (struct sockaddr*)&sa_client, &sa_client_len);		
+	  
+    if (comm_socket > 0){
+			if(inet_ntop(AF_INET, &sa_client.sin_addr, str, sizeof(str))) {
 				cout << "INFO: New connection:\n";
 				cout << "INFO: Client address is " << str << "\n";
-				cout << "INFO: Client port is" << ntohs(sa_client.sin6_port) << "\n";
-			}
-			
-			char buff[1024];
-			int res = 0;
-			for (;;)		
-			{	
-				res = recv(comm_socket, buff, 1024,0);
-                if (res <= 0)                
-                    break;
-                                                			
-			  send(comm_socket, buff, strlen(buff), 0);
-			}
-		}
-		else
-		{
-			printf(".");
-		}
-	}
+				cout << "INFO: Client port is" << ntohs(sa_client.sin_port) << "\n";
+	    }*/
+    if(comm_socket.number() > 0){
+      char buff[1024];
+      int res = 0;
+      for (;;){	
+        //res = recv(comm_socket, buff, 1024,0);
+        res = recv(comm_socket.number(), buff, 1024,0);
+        if (res <= 0)                
+          break;
+                                                      
+        //send(comm_socket, buff, strlen(buff), 0);
+        send(comm_socket.number(), buff, strlen(buff), 0);
+      }
+	  }
+	  else{
+     printf(".");
+    }
+    comm_socket.Close();
+    //close(comm_socket);
+  }
 
 	
 	return 0;

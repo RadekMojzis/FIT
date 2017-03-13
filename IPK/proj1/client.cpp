@@ -4,24 +4,30 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "socket.hpp"
-#include "packet.hpp"  
+#include "packet.hpp"
 #include <string>
 #include <iostream>
 
 using namespace std;
 	
 int main (int argc, const char * argv[]) {
-  cout << "socket set up.. \n";
+  cout << "starting \n";
 	Socket comm_socket;
+  comm_socket.init();
 	cout << "socket set up.. \n";
-	comm_socket.setup("localhost", 6699);
-	cout << "socket set up.. \n";
-	char buf[] = "Ahoj vole!\n";
+	if(comm_socket.connect("localhost", 6666)){
+    return 1;
+  }
+    
+	cout << "Connected! \n";
+	char buf[] = "Echo receaved!\n";
+  cout << "sending a message! \n";
 	
-	while(1){
-		send(comm_socket.number(), buf, 1024, 0);
-		recv(comm_socket.number(), buf, 1024, 0);
-		cout << buf << "\n";
-	}
-	return 0;
+  send(comm_socket.number(), buf, 1024, 0);
+	recv(comm_socket.number(), buf, 1024, 0);
+	cout << buf << "\n";
+	
+  comm_socket.Close();
+  
+  return 0;
 }
