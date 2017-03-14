@@ -1,6 +1,6 @@
 all : client server clear
 
-CC = g++
+CC = g++ -Wno-write-strings 
 
 client.o: client.cpp
 	$(CC) $^ -c

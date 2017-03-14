@@ -25,10 +25,10 @@ class Socket{
     bool connect(string address, int port);
     bool listen(int port);
     bool init();
-    bool Accept(Socket welcome_socket);
+    bool Accept(int welcome_socket);
     void Close();
-    //bool send(Packet packet);
-    //bool receave(Packet packet);
+    bool send(class Packet packet);
+    bool recv(class Packet &packet);
 };
 
 

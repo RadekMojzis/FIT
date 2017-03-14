@@ -7,55 +7,60 @@
 #include "packet.hpp"  
 #include <string>
 #include <stdio.h>
-#include <string.h>
 #include <iostream>
+#include <errno.h>
+#include <cstdlib>
+
 using namespace std;
-int main (int argc, const char * argv[]) {
-	cout << "starting\n";
-	Socket welcome_socket;
-  welcome_socket.init();
-	cout << "socket set up.. \n";
-	if(welcome_socket.listen(6666))
-		return 1;
-  
-  cout << "server set, waiting for connection..\n";
-	char str[INET_ADDRSTRLEN];
-	struct sockaddr_in sa_client;
-  Socket comm_socket;
-  while(1){
-    cout << "welcome socket: " << welcome_socket.number() << "\n";
-    comm_socket.Accept(welcome_socket);
-    
-    /*socklen_t sa_client_len = sizeof(sa_client);
-    
-    int comm_socket = accept(welcome_socket.number(), (struct sockaddr*)&sa_client, &sa_client_len);		
-	  
-    if (comm_socket > 0){
-			if(inet_ntop(AF_INET, &sa_client.sin_addr, str, sizeof(str))) {
-				cout << "INFO: New connection:\n";
-				cout << "INFO: Client address is " << str << "\n";
-				cout << "INFO: Client port is" << ntohs(sa_client.sin_port) << "\n";
-	    }*/
-    if(comm_socket.number() > 0){
-      char buff[1024];
-      int res = 0;
-      for (;;){	
-        //res = recv(comm_socket, buff, 1024,0);
-        res = recv(comm_socket.number(), buff, 1024,0);
-        if (res <= 0)                
-          break;
-                                                      
-        //send(comm_socket, buff, strlen(buff), 0);
-        send(comm_socket.number(), buff, strlen(buff), 0);
-      }
-	  }
-	  else{
-     printf(".");
-    }
-    comm_socket.Close();
-    //close(comm_socket);
-  }
+
+int get_args(int argc, char *argv[], string *root_folder, int *port){
+	int option;
+  while((option = getopt(argc, argv, "r:p:")) != -1){
+		switch(option){
+			case 'r':
+			  *root_folder = optarg;
+			  break;
+			case 'p':
+				*port = atoi(optarg);
+				/*if(errno){
+					cerr << "Port out of range of int... seriously?!";
+				}*/
+			  break;
+		  default:
+			  cout << "Usage: ftrestd -r <ROOT-FOLDER> -p <PORT>";
+				return 0;
+			  break;
+		}
+	}
+}
+
+int main (int argc, char* argv[]){
+	string root_folder = "/";
+	int port = 6677;
+	get_args(argc, argv, &root_folder, &port);
 
 	
+	Socket welcome_socket;
+  if(welcome_socket.init()) return 1;
+	
+	if(welcome_socket.listen(port)) return 1;
+  
+  cout << "server set, waiting for connection..\n";
+  
+	Socket comm_socket;
+  while(1){
+    if(comm_socket.Accept(welcome_socket.number()))return 1;
+    if(comm_socket.number() > 0){
+			Packet pack;
+			Packet& packet = pack;
+      if(!comm_socket.recv(pack)){
+        cout << "Packet receaved, Analysing:" << packet.get_str() << "\n";
+				if(comm_socket.send(pack)) return 1;
+				if(comm_socket.send(pack)) return 1;
+			}
+	  }
+	  comm_socket.Close();
+  }
+  
 	return 0;
 }

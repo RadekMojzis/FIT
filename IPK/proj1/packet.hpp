@@ -8,10 +8,14 @@ using namespace std;
 
 class Packet{
   private:
-    string buffer;
+    char *buffer;
+		size_t size;
   public:
-    void set(string input){buffer = input; return;};
-		const char* get_str();
+	  //~Packet();
+		Packet(){buffer = NULL; size = 0;};
+		//void set_str(string str);
+		void set_str(char* str);
+    char* get_str();
 	  size_t length();
 };
 
