@@ -19,5 +19,6 @@ class Packet{
     char* get_str();
 	  size_t length();
 };
+
 int get_filesize(char *request);
 #endif

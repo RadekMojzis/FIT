@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstdio>
+#include <cstring>
 using namespace std;
 
 void help(){
@@ -140,7 +141,7 @@ int main (int argc, const char * argv[]) {
 	}
 	
 	
-	cout << packet.get_str();
+	//cout << packet.get_str();
 	Socket comm_socket;
 
   if(comm_socket.init()                 ) return 1;
@@ -159,11 +160,18 @@ int main (int argc, const char * argv[]) {
 	i+=4;
 		
 	if(action == "get"){
-		local_path+="soubor";
+		local_path;
 	  FILE *file = fopen(local_path.c_str(), "wb");
 		fwrite(packet_str + i, sizeof(char), get_filesize(packet_str), file);
-	}
-	cout << response << "\n";
+    fclose(file);
+    
+	}else if(action == "lst"){
+    char *out = (char*) malloc(get_filesize(packet_str)*sizeof(char));
+    strncpy(out, packet_str + i, get_filesize(packet_str)*sizeof(char));
+    cout << out;
+  }else{
+    cout << packet_str << "\n";
+  }
 	
   comm_socket.Close();
   return 0;
