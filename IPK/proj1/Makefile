@@ -1,6 +1,6 @@
 all : client server clear
 
-CC = g++ -Wno-write-strings 
+CC = g++ -std=c++1y -Wno-write-strings 
 
 client.o: client.cpp
 	$(CC) $^ -c
@@ -19,3 +19,4 @@ server: server.o packet.o socket.o
 
 clear: 
 	rm *.o
+	

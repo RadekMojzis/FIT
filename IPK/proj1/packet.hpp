@@ -13,10 +13,11 @@ class Packet{
   public:
 	  //~Packet();
 		Packet(){buffer = NULL; size = 0;};
-		//void set_str(string str);
-		void set_str(char* str);
+		bool append(const char* str);
+		bool append(FILE* file);
+		bool set_str(char* str);
     char* get_str();
 	  size_t length();
 };
-
+int get_filesize(char *request);
 #endif

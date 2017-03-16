@@ -91,12 +91,16 @@ bool Socket::send(Packet packet){
 }
 
 bool Socket::recv(Packet &packet){
+	int rcv;
 	char buffer[1024];
-  if (::recv(socket_number, buffer, 1024, 0) <= 0){
-		cerr << "Unable to receave packet!\n";
-		return true;
+	packet.set_str("");
+  if((rcv = ::recv(socket_number, buffer, 1024, 0))){
+		if(rcv == -1){
+			cerr << "Unable to receave packet!\n";
+			return true;
+		}
+		packet.append(buffer);
+		memset(buffer, 0, sizeof(buffer));
 	}
-  packet.set_str(buffer);
-		
 	return false;
 }

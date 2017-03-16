@@ -7,12 +7,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-
-const int IPv4 = 0;
-const int IPv6 = 1;
-
-const int TCP = 0;
-const int UDP = 1;
 using namespace std;
 class Socket{
   private:
@@ -30,7 +24,5 @@ class Socket{
     bool send(class Packet packet);
     bool recv(class Packet &packet);
 };
-
-
 
 #endif
