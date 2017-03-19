@@ -15,12 +15,13 @@
 #include <cstring>
 using namespace std;
 
-int get_args(int argc, char *argv[], string *root_folder, int *port){
+
+int get_args(int argc, char *argv[], string &root_folder, int *port){
 	int option;
   while((option = getopt(argc, argv, "r:p:")) != -1){
 		switch(option){
 			case 'r':
-			  *root_folder = optarg;
+			  root_folder = optarg;
 			  break;
 			case 'p':
 				*port = atoi(optarg);
@@ -50,7 +51,7 @@ string execute_shell_command(string command) {
   stream = popen(command.c_str(), "r");
   if (stream) {
     while (!feof(stream)){
-      if (fgets(buffer, max_buffer, stream) != NULL) result.append(buffer);
+      if (fgets(buffer, max_buffer, stream) != NULL) result+= buffer;
       memset(buffer, 0, sizeof(buffer));
     }
     pclose(stream);
@@ -80,27 +81,13 @@ int get_type(string request){
 	else return 2;
 }
 
-void add_headder(Packet &packet, int length = 0){
-	time_t now = time(NULL);
-	char buf[128];
-  struct tm tm = *gmtime(&now);
-  strftime(buf, 128, "Date: %a, %d %b %Y %H:%M:%S %Z\r\n", &tm);
-	packet.append(buf);
-	packet.append("Content-Type: podle MIME... nevim\r\n");
-	packet.append("Content-Encoding: identity\r\n");
-	packet.append("Content-Length: ");
-	string str_length = to_string(length);
-	packet.append(str_length.c_str());
-	packet.append("\r\n\r\n");
-}
-
-void execute_request(Packet &packet){
+void execute_request(Packet &packet, string root_directory){
 	int i = 0;
+	int type = 0;
 	char* packet_str = packet.get_str();
 	struct stat file_status;
 	string request = "";
-	string path = "";
-	int type = 0;
+	string path = root_directory;
 	string message = "";
 	while(packet_str[i] != '\r'){
 		request += packet_str[i];
@@ -108,119 +95,117 @@ void execute_request(Packet &packet){
 	}
 	if(request.find("PUT") == 0){
 		request.erase(0, 4);
-		path = get_path(request);
-		if(path == "") goto BAD_REQ;
+		path += get_path(request);
+		if(path == ""){ packet.set_message("404 Not found\r\n", "Directory not found.\n"); return;}
 		request.erase(0, path.length());
 		type = get_type(request);
-		if(type == 2) goto BAD_REQ;
+		if(type == 2) { packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
 		if(type == 0){
 		  i = 0;
 			while(packet_str[i] != '\r' || packet_str[i+1] != '\n' || packet_str[i+2] != '\r' || packet_str[i+3] != '\n')
 				i++;
 			i+=4;
-      FILE *file = fopen(path.c_str(), "wb");
+			FILE *file;
+			if((file = fopen(path.c_str(), "r")) != NULL){
+				fclose(file);
+				cout << path.c_str();
+				packet.set_message("400 Bad Request\r\n", "Already exists.\n");
+				return;
+			}
+      file = fopen(path.c_str(), "wb");
       if(file == NULL){
-        //cerr << "things went south!\n" << path << "\n";
-        goto BAD_REQ;
+        packet.set_message("500 Internal Server Error\r\n", "Unable to open binary file for writing.\n");
+				return;
       }
       fwrite(packet_str + i, sizeof(char), get_filesize(packet_str), file);
       fclose(file);
 			packet.set_str("200 OK\r\n");
-			add_headder(packet);
+			packet.add_headder();
 			return;
 		}
 		if(type == 1){
 			message = execute_shell_command("mkdir " + path);
-			packet.set_str("200 OK\r\n");
-			add_headder(packet, message.length());
-			packet.append(message.c_str());
-			return;
+			if(message.length()){
+				packet.set_message("400 Bad Request\r\n", "Already exists.\n");
+				return;
+			}
+			else{
+				packet.set_message("200 OK\r\n");
+        return;
+			}
 		}
 	}
 	else if(request.find("GET") == 0){
     //cout << "sth is going on...\n";
 		request.erase(0, 4);
-		path = get_path(request);
+		path += get_path(request);
 		request.erase(0, path.length());
 	  type = get_type(request);
     //cout << type << "\n";
-    if(type == 2) goto BAD_REQ;
+    if(type == 2) { packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
 		if(type == 0){
-			if(stat(path.c_str(), &file_status))goto NOT_FOUND;
-			if(file_status.st_mode == S_IFDIR){
-				goto BAD_REQ;
-			}
+			if(stat(path.c_str(), &file_status)){ packet.set_message("404 Not found\r\n", "File not found.\n"); return;}
+			if(S_ISDIR(file_status.st_mode)){ packet.set_message("400 Bad Request\r\n", "Not a file.\n"); return;}
 			FILE *file = fopen(path.c_str(), "rb");
 			fseek (file , 0 , SEEK_END);
 			int filesize = ftell (file);
 			rewind (file);
 			
 			packet.set_str("200 OK\r\n");
-			add_headder(packet, filesize);
+			packet.add_headder(filesize);
 			packet.append(file);
 			return;
 		}
 		if(type == 1){
-      if(stat(path.c_str(), &file_status))goto NOT_FOUND;
-		  if(file_status.st_mode == S_IFREG){
-				goto BAD_REQ;
-			}
+      if(stat(path.c_str(), &file_status)){ packet.set_message("404 Not found\r\n", "Directory not found.\n"); return;}
+		  if(S_ISREG(file_status.st_mode)) { packet.set_message("400 Bad Request\r\n", "Not a directory.\n"); return;}
 			message = execute_shell_command("ls " + path);
 			packet.set_str("200 OK\r\n");
-			add_headder(packet, message.length());
+			packet.add_headder(message.length());
 			packet.append(message.c_str());
+			packet.append("\0", 1);
 			return;
 		}
 	}
 	else if(request.find("DELETE") == 0){
 		request.erase(0, 7);
-		path = get_path(request);
+		path += get_path(request);
 		request.erase(0, path.length());
 	  type = get_type(request);
-		if(type == 2) goto BAD_REQ;
+		if(type == 2){ packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
 		if(type == 0){
-			if(stat(path.c_str(), &file_status))goto NOT_FOUND;
-			if(file_status.st_mode == S_IFDIR){
-				goto BAD_REQ;
-			}
+			if(stat(path.c_str(), &file_status)){ packet.set_message("404 Not found\r\n", "File not found.\n"); return;}
+			if(S_ISDIR(file_status.st_mode)){ packet.set_message("400 Bad Request\r\n", "Not a file.\n"); return;}
 			message = execute_shell_command("rm " + path);
-			packet.set_str("200 OK\r\n");
-			add_headder(packet, message.length());
-			packet.append(message.c_str());
-      packet.append("\0");
+			if(message.length()){ packet.set_message("400 Bad Request\r\n", "Not a file.\n"); return;}
+			else{
+				packet.set_message("200 OK\r\n");
+				return;
+			}
 			return;
 		}
 		if(type == 1){
-			if(stat(path.c_str(), &file_status))goto NOT_FOUND;
-			if(file_status.st_mode == S_IFREG){
-        goto BAD_REQ;
-      }
+			if(stat(path.c_str(), &file_status)){ packet.set_message("404 Not found\r\n", "Directory not found.\n"); return;}
+			if(S_ISREG(file_status.st_mode)) { packet.set_message("400 Bad Request\r\n", "Not a directory.\n"); return;}
 			message = execute_shell_command("rmdir " + path);
-			packet.set_str("200 OK\r\n");
-			add_headder(packet, message.length());
-			packet.append(message.c_str());
-      packet.append("\0");
+			if(message.length()){ packet.set_message("400 Bad Request\r\n","Directory not empty.\n"); return;}
+			else{ 
+			  packet.set_message("200 OK\r\n");
+				return;
+			}
 			return;
 		}
 	}
-	else{
-		BAD_REQ:
-		packet.set_str("400 Bad Request\r\n");
-		add_headder(packet);
-		return;
-	}
-  NOT_FOUND:
-		packet.set_str("404 Not found\r\n");
-		add_headder(packet);
-		return;
+  packet.set_message("400 Bad Request\r\n","Unknown reuquest.\n");
 
 }
 
 int main (int argc, char* argv[]){
-	string root_folder = "/";
+	string root = "/";
+	string &root_directory = root;
 	int port = 6677;
-	get_args(argc, argv, &root_folder, &port);
-
+	get_args(argc, argv, root_directory, &port);
+  if(root_directory.back() == '/'){root_directory.pop_back();}
 	
 	Socket welcome_socket;
   if(welcome_socket.init()) return 1;
@@ -245,7 +230,7 @@ int main (int argc, char* argv[]){
           i++;
         }
 				cout << "Hello, new request is comming\n" << request << "\r\n\r\n---------------- END OF TRANSMITION ------------\n";
-				execute_request(packet);
+				execute_request(packet, root_directory);
 				if(comm_socket.send(packet)) return 1;
 			}
 	  }

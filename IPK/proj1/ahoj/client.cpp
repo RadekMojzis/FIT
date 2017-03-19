@@ -65,7 +65,7 @@ int main (int argc, const char * argv[]) {
 	if(action == "get"){
 		if(argc == 3){
 			const char *rempat = remote_path.c_str();
-			local_path = rempat + remote_path.find_last_of("/")+1;
+			local_path = rempat + remote_path.find_last_of("/");
 		}
 		if(argc == 4)
 			local_path = argv[3];
@@ -162,12 +162,12 @@ int main (int argc, const char * argv[]) {
 	if(comm_socket.connect(hostname, port)) return 1;
 
 	if(comm_socket.send(message)){
-		cerr << "Fatal error :/ nothing can be done about this...";
+		cerr << "Fatal error :/ nothing can be done about this...\n";
 		comm_socket.Close();
 		return 1;
 	}
 	if(comm_socket.recv(message)){
-		cerr << "server is sending me some kind of giberish :/ i cant understand a word from it\n Go check, there might be something wrong with it";
+		cerr << "server is sending me some kind of giberish :/ i cant understand a word from it\n Go check, there might be something wrong with him\n";
 		comm_socket.Close();
 		return 1;
 	}
@@ -183,17 +183,17 @@ int main (int argc, const char * argv[]) {
   
 	if(action == "get"){                                // -------------------------------------- GET
 		if(response.find("200 OK\r\n") == 0){
-			//cout << local_path;
+			cout << local_path;
 			FILE *file = fopen(local_path.c_str(), "wb");
 			if(file == NULL){
-				cerr <<  "Unable to open file";
+				cerr <<  "Unable to open file\n";
 				return 1;
 			}
 			fwrite(packet_str + i, sizeof(char), get_filesize(packet_str), file);
 			fclose(file);
 		}
 		else if(response.find("400 Bad Request\r\n") == 0 ||response.find("404 Not found\r\n") == 0){
-			cerr << packet_str + i;
+			cerr << packet_str + i<< "\n";
 		}
 		else{
 			cerr << "unknown response from server\n"<< packet.get_str();
@@ -211,7 +211,7 @@ int main (int argc, const char * argv[]) {
   }else if(action == "put"){                          // --------------------------------------- PUT
 		if(response.find("200 OK\r\n") == 0){;}
 		else if(response.find("400 Bad Request\r\n") == 0 || response.find("404 Not found\r\n") == 0){
-			cerr << packet_str + i;             
+			cerr << packet_str + i<< "\n";             
 		}
 		else{
 			cerr << "unknown response from server:\n"<< packet.get_str();
@@ -219,7 +219,7 @@ int main (int argc, const char * argv[]) {
 	}else if(action == "mkd"){                         // ---------------------------------------- MKD
 		if(response.find("200 OK\r\n") == 0){;}
 		else if(response.find("400 Bad Request\r\n") == 0 || response.find("404 Not found\r\n") == 0){
-			cerr << packet_str + i;                     
+			cerr << packet_str + i<< "\n";                     
 		}
 		else{
 			cerr << "unknown response from server\n"<< packet.get_str();
@@ -227,7 +227,7 @@ int main (int argc, const char * argv[]) {
 	}else if(action == "del"){
 		if(response.find("200 OK\r\n") == 0){;}        // ---------------------------------------- DEL
 		else if(response.find("400 Bad Request\r\n") == 0 || response.find("404 Not found\r\n") == 0){
-			cerr << packet_str + i;
+			cerr << packet_str + i<< "\n";
 		}
 		else{
 			cerr << "unknown response from server\n"<< packet.get_str();
@@ -236,7 +236,7 @@ int main (int argc, const char * argv[]) {
 	}else if(action == "rmd"){
 		if(response.find("200 OK\r\n") == 0){;}        // ---------------------------------------- RMD
 		else if(response.find("400 Bad Request\r\n") == 0 || response.find("404 Not found\r\n") == 0){
-			cerr << packet_str + i;
+			cerr << packet_str + i << "\n";
 		}
 		else{
 			cerr << "unknown response from server\n"<< packet.get_str();

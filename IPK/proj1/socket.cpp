@@ -94,13 +94,53 @@ bool Socket::recv(Packet &packet){
 	int rcv;
 	char buffer[1024];
 	packet.set_str("");
-  if((rcv = ::recv(socket_number, buffer, 1024, 0))){
+	long long int full_packetsize, recv_so_far = 0;
+	
+	rcv = ::recv(socket_number, buffer, 1024, 0);
+	if(rcv == -1){
+		cerr << "Error ocured while receaving a packet!\n";
+		return true;
+	}
+	recv_so_far = rcv;
+	packet.append(buffer, rcv);
+	string headder = "";
+	int i = 0;
+	while(buffer[i] != '\r' || buffer[i+1] != '\n' || buffer[i+2] != '\r' || buffer[i+3] != '\n'){
+	  headder += buffer[i];
+		i++;
+		if(i + 3 > 1024){cerr << "error while receaving packet!\n"; return true;}
+	}
+	full_packetsize = get_filesize(packet.get_str());
+	full_packetsize += i + 4;
+  
+	while(recv_so_far < full_packetsize){
+    /*int percentage = (20 * recv_so_far) / full_packetsize;
+		cout << "progress: [";
+		for(int i = 0; i < 20; i++){
+			if(i < percentage) cout << ".";
+			else cout << "-";
+		}
+		cout << "]\n";
+		*/
+		rcv = ::recv(socket_number, buffer, 1024, 0);
+		if(rcv == -1){
+			cerr << "Error ocured while receaving a packet!\n";
+			return true;
+		}
+		packet.append(buffer, rcv);
+		memset(buffer, 0, sizeof(buffer));
+		recv_so_far += rcv;
+		cout << recv_so_far << "\n";
+		cout << full_packetsize << "\n";
+	}
+	packet.append("\0", 1);
+  /*if((rcv = ::recv(socket_number, buffer, 1024, 0))){
 		if(rcv == -1){
 			cerr << "Unable to receave packet!\n";
 			return true;
 		}
 		packet.append(buffer);
 		memset(buffer, 0, sizeof(buffer));
-	}
+	}*/
 	return false;
 }
