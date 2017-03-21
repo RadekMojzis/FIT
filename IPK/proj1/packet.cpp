@@ -4,11 +4,12 @@
 #include <string>
 #include <string.h>
 #include <cstdlib>
-/*Packet::~Packet(){
-	if(buffer != NULL)
-		delete [] buffer;
-	buffer = NULL;
-}*/
+void Packet::clear(){
+	if(buffer != NULL){
+		free(buffer);
+	}
+	return;
+}
 
 bool Packet::set_message(string response, string message){
 	if(set_str("")) return true;
@@ -19,7 +20,6 @@ bool Packet::set_message(string response, string message){
 	
 	return false;
 }
-
 
 bool Packet::add_headder(int length){
 	time_t now = time(NULL);
@@ -52,6 +52,8 @@ bool Packet::set_str(char* str){
 	return false;
 }
 
+// Packet append for appending byte arrays
+
 bool Packet::append(const char* str, unsigned int size_of_str){
 	char *more_room = NULL;
   more_room = (char*) realloc(buffer, size + size_of_str);
@@ -67,6 +69,8 @@ bool Packet::append(const char* str, unsigned int size_of_str){
   }	
 	return false;
 }
+
+// Packet append for appending regular "strings"
 
 bool Packet::append(const char* str){
 	unsigned int size_of_str = strlen(str);
@@ -85,20 +89,7 @@ bool Packet::append(const char* str){
 	return false;
 }
 
-int get_filesize(char *request){
-	int i = 0;
-	string headder;
-	while(request[i] != '\r' || request[i+1] != '\n' || request[i+2] != '\r' || request[i+3] != '\n'){
-		headder += request[i];
-		i++;
-	}
-	if(headder.find("Content-Length:") == string::npos){
-		return 0;
-	}
-	int size = strtol(request + headder.find("Content-Length:") + strlen("Content-Length:"), 0, 10);
-  if(errno == ERANGE){return -1;}	
-	return size;
-}
+// Packet append for appending **OPEN** files
 
 bool Packet::append(FILE* file){
 	fseek (file , 0 , SEEK_END);
@@ -122,7 +113,22 @@ bool Packet::append(FILE* file){
 	return false;
 }
 
+// Parses the string aned extracts whatever follows after Content-Length: using strtol
 
+int get_filesize(char *request){
+	int i = 0;
+	string headder;
+	while(request[i] != '\r' || request[i+1] != '\n' || request[i+2] != '\r' || request[i+3] != '\n'){
+		headder += request[i];
+		i++;
+	}
+	if(headder.find("Content-Length:") == string::npos){
+		return 0;
+	}
+	int size = strtol(request + headder.find("Content-Length:") + strlen("Content-Length:"), 0, 10);
+  if(errno == ERANGE){return -1;}	
+	return size;
+}
 
 size_t Packet::length(){
 	return size;

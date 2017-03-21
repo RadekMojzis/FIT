@@ -24,13 +24,19 @@ int get_args(int argc, char *argv[], string &root_folder, int *port){
 			  root_folder = optarg;
 			  break;
 			case 'p':
-				*port = atoi(optarg);
-				if(*port < 0){
-					cerr << "Did you really just set negative port number?... Sorry, cant help you...\n";
+				*port = strtol(optarg, 0, 10);
+				if(errno == ERANGE){
+					cerr << "Port integer OVERFLOW... seriously?!";
+					return 1;
 				}
-				/*if(errno){
-					cerr << "Port out of range of int... seriously?!";
-				}*/
+				if(*port < 0){
+					cerr << "Did you really just set negative port number?... Sorry, cant help you...";
+					return 1;
+				}
+				if(*port > 65535){
+					cerr << "Maximum allowed port number is 65535, sorry.\n";
+					return 1;
+				}
 			  break;
 		  default:
 			  cout << "Usage: ftrestd -r <ROOT-FOLDER> -p <PORT>";
@@ -38,7 +44,10 @@ int get_args(int argc, char *argv[], string &root_folder, int *port){
 			  break;
 		}
 	}
+	return 0;
 }
+
+// Yea, this function works like magic :D really nice, got a little help from my brother but its awesome
 
 string execute_shell_command(string command) {
   string result = "";
@@ -73,10 +82,9 @@ string get_path(string request){
 }
 
 int get_type(string request){
-  //cout << request << "\n";
-  if(request.find("?type=file HTTP/1.1") != string::npos)
+  if(request.find("=file HTTP/1.1") != string::npos)
 	  return 0;
-	if(request.find("?type=folder HTTP/1.1") != string::npos)
+	if(request.find("=folder HTTP/1.1") != string::npos)
 		return 1;
 	else return 2;
 }
@@ -108,7 +116,6 @@ void execute_request(Packet &packet, string root_directory){
 			FILE *file;
 			if((file = fopen(path.c_str(), "r")) != NULL){
 				fclose(file);
-				cout << path.c_str();
 				packet.set_message("400 Bad Request\r\n", "Already exists.\n");
 				return;
 			}
@@ -136,12 +143,10 @@ void execute_request(Packet &packet, string root_directory){
 		}
 	}
 	else if(request.find("GET") == 0){
-    //cout << "sth is going on...\n";
 		request.erase(0, 4);
 		path += get_path(request);
 		request.erase(0, path.length());
 	  type = get_type(request);
-    //cout << type << "\n";
     if(type == 2) { packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
 		if(type == 0){
 			if(stat(path.c_str(), &file_status)){ packet.set_message("404 Not found\r\n", "File not found.\n"); return;}
@@ -163,7 +168,6 @@ void execute_request(Packet &packet, string root_directory){
 			packet.set_str("200 OK\r\n");
 			packet.add_headder(message.length());
 			packet.append(message.c_str());
-			packet.append("\0", 1);
 			return;
 		}
 	}
@@ -188,7 +192,7 @@ void execute_request(Packet &packet, string root_directory){
 			if(stat(path.c_str(), &file_status)){ packet.set_message("404 Not found\r\n", "Directory not found.\n"); return;}
 			if(S_ISREG(file_status.st_mode)) { packet.set_message("400 Bad Request\r\n", "Not a directory.\n"); return;}
 			message = execute_shell_command("rmdir " + path);
-			if(message.length()){ packet.set_message("400 Bad Request\r\n","Directory not empty.\n"); return;}
+			if(message.length()){ packet.set_message("400 Bad Request\r\n", "Directory not empty.\n"); return;}
 			else{ 
 			  packet.set_message("200 OK\r\n");
 				return;
@@ -201,41 +205,54 @@ void execute_request(Packet &packet, string root_directory){
 }
 
 int main (int argc, char* argv[]){
-	string root = "/";
+	string root = "";
 	string &root_directory = root;
 	int port = 6677;
-	get_args(argc, argv, root_directory, &port);
-  if(root_directory.back() == '/'){root_directory.pop_back();}
+	pid_t server_asistent;
+	if(get_args(argc, argv, root_directory, &port)) return 1;
+  if(root_directory.back() != '/'){root_directory.push_back('/');}
+	
 	
 	Socket welcome_socket;
   if(welcome_socket.init()) return 1;
 	
 	if(welcome_socket.listen(port)) return 1;
   
-  //cout << "server set, waiting for connection..\n";
-  
 	Socket comm_socket;
-  while(1){
-    if(comm_socket.Accept(welcome_socket.number()))return 1;
-    if(comm_socket.number() > 0){
-			Packet pack;
-			Packet& packet = pack;
-			
-      if(!comm_socket.recv(packet)){
-        int i = 0;
-        char *packet_str = packet.get_str();
-        string request;
-        while(packet_str[i] != '\r' || packet_str[i+1] != '\n' || packet_str[i+2] != '\r' || packet_str[i+3] != '\n'){
-          request += packet_str[i];
-          i++;
-        }
-				cout << "Hello, new request is comming\n" << request << "\r\n\r\n---------------- END OF TRANSMITION ------------\n";
-				execute_request(packet, root_directory);
-				if(comm_socket.send(packet)) return 1;
+
+	while(comm_socket.Accept(welcome_socket.number()) == false){
+		server_asistent = fork();
+		if(server_asistent < 0){
+			cerr << "Sorry, no can do, insufficient system resources :/\n" << flush;
+			exit(EXIT_FAILURE);
+		}
+		if(server_asistent == 0){
+			//cout << "Asistent, reporting for duty!\n";
+			break;
+		}
+	}
+	
+	if(comm_socket.number() > 0){
+		Packet pack;
+		Packet& packet = pack;
+		
+		if(!comm_socket.recv(packet)){
+			int i = 0;
+			char *packet_str = packet.get_str();
+			execute_request(packet, root_directory);
+			if(comm_socket.send(packet)) {
+				packet.set_message("500 Internal Server Error\r\n", "Unable to open binary file for writing.\n");
+				comm_socket.Close();
+				pack.clear();
+				exit(EXIT_FAILURE);
 			}
-	  }
-	  comm_socket.Close();
-  }
-  
+		}
+		pack.clear();
+	}
+	comm_socket.Close();
+	if(server_asistent == 0){
+		//cout << "Asistent is taking a nap...\n" << flush;
+		exit(EXIT_SUCCESS);
+	}
 	return 0;
 }

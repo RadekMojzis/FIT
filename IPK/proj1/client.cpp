@@ -19,34 +19,32 @@ void help(){
 	cout << "Usage: ftrest COMMAND REMOTE-PATH [LOCAL-PATH]\n";
 }
 
+// parses the input string, gets hostname, port and remote path i use it as parse_input(argv[2] ... )
+
 int parse_input(string input, string& hostname, int& port, string& remote_path){
 	if(input.find("http://") != 0){
 		cerr << "couldnt find 'http://'";
 	  return 1;
 	}
-	string rest_of_input = input.substr (7); // here magic happens << no actually 7 i the length of 'http://'
-	//cout << rest_of_input << "\n";
+	string rest_of_input = input.substr (7); 
 	hostname = rest_of_input.substr(0, rest_of_input.find(":"));
-	//cout << "hostname: " << hostname << "\n";
 	rest_of_input.erase(0, rest_of_input.find(":")+1);
-	//cout << rest_of_input << "\n";
 	port = strtol(rest_of_input.c_str(), 0, 10);
 	if(errno == ERANGE){
 		cerr << "Port error: Number out of range....\n";
 		return 1;
 	}
-	//cout << "port number: " << port << "\n";
 	rest_of_input.erase(0, rest_of_input.find("/"));
-	//cout << rest_of_input << "\n";
 	remote_path = rest_of_input;
-	//cout<< "remote path: " << remote_path << "\n";
 	return 0;
 }
 
 int main (int argc, const char * argv[]) {
   if(argc < 3 || argc > 4){help(); return 0;}
-	FILE* put_target = NULL;
 	
+	// -----------------------  parsing of arguments -----------------------------//
+	
+	FILE* put_target = NULL;
 	string action = argv[1];
 	int    p; 
 	string rem_pat;
@@ -92,6 +90,8 @@ int main (int argc, const char * argv[]) {
 		return 1;
 	}
 	
+	// ------------------------- Creating a communication packet --------------------------
+	
 	Packet packet;
 	Packet& message = packet;
 	int filesize = 0;
@@ -134,7 +134,6 @@ int main (int argc, const char * argv[]) {
 		packet.append("?type=folder HTTP/1.1\r\n");
 	}
 	
-	
 	time_t now = time(NULL);
 	char buf[128];
   struct tm tm = *gmtime(&now);
@@ -154,24 +153,27 @@ int main (int argc, const char * argv[]) {
 	  fclose(put_target);
 	}
 	
+	// ------------------ Now the packet is ready, connect to server ----------//
 	
-	//cout << packet.get_str();
 	Socket comm_socket;
 
   if(comm_socket.init()                 ) return 1;
 	if(comm_socket.connect(hostname, port)) return 1;
 
+  // -------------------- Send the packet --------------------------//	
+	
 	if(comm_socket.send(message)){
 		cerr << "Fatal error :/ nothing can be done about this...";
 		comm_socket.Close();
 		return 1;
 	}
+	// ----------------------wait for a reply -----------------------//
 	if(comm_socket.recv(message)){
 		cerr << "server is sending me some kind of giberish :/ i cant understand a word from it\n Go check, there might be something wrong with it";
 		comm_socket.Close();
 		return 1;
 	}
-	
+	// --------------------- interpret the response -----------------//
 	int i = 0;
   char *packet_str = message.get_str();
 	string response;
@@ -242,7 +244,7 @@ int main (int argc, const char * argv[]) {
 			cerr << "unknown response from server\n"<< packet.get_str();
 		}
 	}
-	
+	packet.clear();
   comm_socket.Close();
   return 0;
 }

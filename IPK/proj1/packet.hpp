@@ -21,6 +21,7 @@ class Packet{
 	  size_t length();
 		bool set_message(string response, string message = "");
     bool add_headder(int length = 0);
+		void clear();
 };
 
 int get_filesize(char *request);

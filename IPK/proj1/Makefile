@@ -1,4 +1,4 @@
-all : client server clear
+all : ftrest ftrestd clear
 
 CC = g++ -std=c++1y -Wno-write-strings 
 
@@ -11,10 +11,10 @@ packet.o: packet.cpp
 socket.o: socket.cpp
 	$(CC) $^ -c
 
-client: client.o packet.o socket.o
+ftrest: client.o packet.o socket.o
 	$(CC) client.o packet.o socket.o -o $@
   
-server: server.o packet.o socket.o
+ftrestd: server.o packet.o socket.o
 	$(CC) server.o packet.o socket.o -o $@
 
 clear: 

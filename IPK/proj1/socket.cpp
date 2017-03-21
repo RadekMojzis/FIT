@@ -36,7 +36,7 @@ int Socket::number(){
 bool Socket::Accept(int welcome_socket){
   socket_number = accept(welcome_socket, NULL, NULL);
 	if(socket_number < 0){
-		cout << "Accept error! code:" << strerror(errno) << "\n";
+		cerr << "Accept error! code:" << strerror(errno) << "\n";
     return true;
 	}
 	return false;
@@ -114,14 +114,6 @@ bool Socket::recv(Packet &packet){
 	full_packetsize += i + 4;
   
 	while(recv_so_far < full_packetsize){
-    /*int percentage = (20 * recv_so_far) / full_packetsize;
-		cout << "progress: [";
-		for(int i = 0; i < 20; i++){
-			if(i < percentage) cout << ".";
-			else cout << "-";
-		}
-		cout << "]\n";
-		*/
 		rcv = ::recv(socket_number, buffer, 1024, 0);
 		if(rcv == -1){
 			cerr << "Error ocured while receaving a packet!\n";
@@ -130,17 +122,7 @@ bool Socket::recv(Packet &packet){
 		packet.append(buffer, rcv);
 		memset(buffer, 0, sizeof(buffer));
 		recv_so_far += rcv;
-		cout << recv_so_far << "\n";
-		cout << full_packetsize << "\n";
 	}
 	packet.append("\0", 1);
-  /*if((rcv = ::recv(socket_number, buffer, 1024, 0))){
-		if(rcv == -1){
-			cerr << "Unable to receave packet!\n";
-			return true;
-		}
-		packet.append(buffer);
-		memset(buffer, 0, sizeof(buffer));
-	}*/
 	return false;
 }
