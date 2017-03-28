@@ -2,43 +2,27 @@
 
 
 def balanced_paren(parenstr):
-	parenstack = []
+	paren_stack = []
+	check_list = {')' : '(', ']' : '[', '}' : '{', '>' : '<'}
 	for c in parenstr:
-		if c == "{" or c == "(" or c == "<" or c == "[":
-		  parenstack.append(c)
-		if c == "}":
-		  if parenstack.pop() != "{":
-			  return False
-		if c == ")":
-		  if parenstack.pop() != "(":
-			  return False
-		if c == ">":
-		  if parenstack.pop() != "<":
-			  return False
-		if c == "]":
-		  if parenstack.pop() != "[":
-			  return False
-	
-	if not parenstack:
-	  return True
+		if c in check_list.values():
+			paren_stack.append(c)
+		if c in check_list:
+			if not paren_stack:
+				return False
+			if check_list[c] != paren_stack.pop():
+				return False
+
+	if not paren_stack:
+		return True
 	return False
-
-if balanced_paren("12<4<[a]b>>5"):
-  print("true")
-else:
-  print("false")
 	
-if balanced_paren("123"):
-  print("true")
-else:
-  print("false")
-	
-if balanced_paren("'[{}]"):
-  print("true")
-else:
-  print("false")
+def test_balanced_paren():
+	print(balanced_paren("12<4<[a]b>>5"))
+	print(balanced_paren("123"))
+	print(balanced_paren("'[{}]"))
+	print(balanced_paren("{1<2(>3)}"))
+	print(balanced_paren(">>>"))
 
-if balanced_paren("{1<2(>3)}"):
-  print("true")
-else:
-  print("false")
+test_balanced_paren()
+
