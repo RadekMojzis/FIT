@@ -53,15 +53,28 @@ def get_options():
 #----------------------------------------------------------------------------------------------#		
 
 def normalise_regex(reg):
+	assert not re.search("\.\.", reg)
+	assert not re.search("\.\]", reg)
+	assert not re.search("\.\}", reg)
+	assert not re.search("\.\)", reg)
+	assert not re.search("\.\+", reg)
+	assert not re.search("\.\*", reg)
+	assert not re.search("\.\|", reg)
+	
+	assert not re.search("\|\.", reg)
+	assert not re.search("\[\.", reg)
+	assert not re.search("\(\.", reg)
+	assert not re.search("\{\.", reg)
+	
 	reg = re.sub("\.", "", reg)
 	
-	reg = re.sub(r"\\", "\\\\", reg)
+	reg = re.sub(r"\\", r"\\\\", reg)
 	reg = re.sub("\\ufeff", "", reg)
 	reg = re.sub("\[", "\\\[", reg)
 	reg = re.sub("\]", "\\\]", reg)
 	reg = re.sub("\{", "\\\{", reg)
 	reg = re.sub("\}", "\\\}", reg)
-	
+	reg = re.sub("\$", "\\\$", reg)
 	reg = re.sub("\^", "\\\^", reg)
 	reg = re.sub("\?", "\\\?", reg)
 
@@ -71,7 +84,6 @@ def normalise_regex(reg):
 	if re.search("(?<!%)(?<=!).", reg):
 		reg = re.sub("(?<!%)!.", "[^" + re.search("(?<!%)(?<=!).", reg).group(0) + "]", reg)
 	
-	reg = re.sub("%s", "\s", reg)
 	reg = re.sub("%a", ".", reg)
 	reg = re.sub("%d", "[0-9]", reg)
 	reg = re.sub("%l", "[a-z]", reg)
@@ -99,14 +111,14 @@ def normalise_format(fmt):
 	fmt = re.sub("italic", "i", fmt)
 	fmt = re.sub("underline", "u", fmt)
 	fmt = re.sub("teletype", "tt", fmt)
-	fmt = re.sub("size:[1-7]", "font size=", fmt)
-	fmt = re.sub("color:[0-6a-fA-F]{6}", "font color=#", fmt)
-	
+	fmt = re.sub("size:(?=[1-7])", "font size=", fmt)
+	fmt = re.sub("color:(?=[0-9a-fA-F]{6})", "font color=#", fmt)
+	'''
 	if re.search("font size=", fmt) and re.search("font color=#", fmt):
 		color = re.search("(?<=font color=#)[0-6a-fA-F]{6}", fmt).group(0)
 		fmt = re.sub("font color=#[0-6A-F]{6}", "", fmt)
 		fmt = re.sub("font size=", "font color=#" + color + " size=" ,fmt)
-	
+	'''
 	fmt = re.split(",", fmt)
 	fmt = filter(None, [member.strip() for member in fmt])
 	fmt = [member for member in fmt]
@@ -123,10 +135,11 @@ def parse_fmt_file(fmt_file):
 		sys.stderr.write("Bad syntax")
 		close_IO()
 		exit(4)
+	
 	for line in parsed_fmt:
 		for fmt in line[1]:
 			if re.search("color:", fmt):
-				sys.stderr.write("Bad color")
+				sys.stderr.write(fmt)
 				close_IO()
 				exit(4)
 			if re.search("size:", fmt):
@@ -137,9 +150,6 @@ def parse_fmt_file(fmt_file):
 				sys.stderr.write("Unrecognised option: " + fmt)
 				close_IO()
 				exit(4)
-				
-	
-	
 	
 	return parsed_fmt
 	
@@ -148,20 +158,24 @@ def parse_fmt_file(fmt_file):
 def format_text(fmt, file_in):
 	global current_html_tag
 	line_separator = "\n"
-	if brflag:
-		line_separator = "<br />\n"
-
-	file_str = line_separator.join(line.strip() for line in file_in.readlines())
+	
+	file_str = file_in.read()
+	
 	list_of_tag_pairs = []
+	
 	for what, how in fmt:
-		if what != "":
-			if re.search(what, file_str):
-				for how_exactly in how:
-					for cosi in re.finditer(what, file_str):
+		if re.search(what, file_str):
+			for how_exactly in how:
+				for cosi in re.finditer(what, file_str, re.DOTALL):
+					if cosi.group(0):
 						list_of_tag_pairs.append((list(cosi.span()), how_exactly))
+	'''
+	for cosi in fmt:
+		print(cosi)
+	'''
 	
 	list_of_tags = []
-
+	
 	order = []
 	for item in list_of_tag_pairs:
 		tag = [item[0][0], "<" + item[1] + ">"]
@@ -184,8 +198,6 @@ def format_text(fmt, file_in):
 		shift += len(tag[1])
 	
 	return file_str
-	
-	#+ ">" + what + "</" +  + ">"
 	
 
 def close_IO():
@@ -228,6 +240,6 @@ except Exception as e:
 	exit(100)
 
 if(brflag):
-	formated_text += "<br />\n"
+	formated_text = re.sub("\n", "<br />\n", formated_text)
 output_file.write(formated_text )
 close_IO()
