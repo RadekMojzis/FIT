@@ -3,7 +3,7 @@
 #include <sys/time.h>
 
 #include <asm/types.h>
-
+#include <arpa/inet.h>
 #include <math.h>
 #include <string.h>
 #include <stdio.h>

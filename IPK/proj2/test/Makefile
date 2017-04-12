@@ -1,8 +1,8 @@
 all : test clear
 
-CC = gcc -std=c99
+CC = gcc -std=gnu99
 
-test.o: test1.c
+test.o: test.c
 	$(CC) $^ -c
 
 test: test.o

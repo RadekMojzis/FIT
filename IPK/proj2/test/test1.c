@@ -38,8 +38,10 @@ int main()
         if (ioctl(sock, SIOCGIFFLAGS, &ifr) == 0) {
             if (! (ifr.ifr_flags & IFF_LOOPBACK)) { // don't count loopback
                 if (ioctl(sock, SIOCGIFHWADDR, &ifr) == 0) {
-                    success = 1;
-                    break;
+                    unsigned char m[6];
+
+										memcpy(m, ifr.ifr_hwaddr.sa_data, 6);
+										printf("adress of %s: %.2X.%.2X.%.2X.%.2X.%.2X.%.2X\n",ifr.ifr_name, m[0], m[1], m[2], m[3], m[4], m[5]);
                 }
             }
         }
@@ -48,8 +50,4 @@ int main()
 				}
     }
 
-    unsigned char m[6];
-
-    if (success) memcpy(m, ifr.ifr_hwaddr.sa_data, 6);
-		printf("adress: %.2X.%.2X.%.2X.%.2X.%.2X.%.2X", m[0], m[1], m[2], m[3], m[4], m[5]);
 }
