@@ -1,8 +1,8 @@
 all : test clear
 
-CC = gcc -std=c++1y -Wno-write-strings 
+CC = gcc -std=c99
 
-test.o: test.c
+test.o: test1.c
 	$(CC) $^ -c
 
 test: test.o
