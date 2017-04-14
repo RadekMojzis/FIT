@@ -39,7 +39,8 @@ int main (int argc, const char * argv[]) {
 	s.sin_port = (in_port_t)htons(tcpSocket ? tcpSocket : 3310);
 	s.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
-	cli_dbgmsg("broadcast %s to %d\n", mess, broadcastSock);
+	char mess[500] = "ahoj vole!";
+	
 	if(sendto(broadcastSock, mess, strlen(mess), 0, (struct sockaddr *)&s, sizeof(struct sockaddr_in)) < 0)
 			perror("sendto");
 	
