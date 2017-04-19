@@ -1,0 +1,39 @@
+--- server.cpp	2017-03-19 20:56:11.000000000 +0100
++++ server-patched.cpp	2017-04-19 14:02:34.562420000 +0200
+@@ -103,9 +103,10 @@
+ 	}
+ 	if(request.find("PUT") == 0){
+ 		request.erase(0, 4);
+-		path += get_path(request);
++		string newpath = get_path(request);
++		path += newpath;
+ 		if(path == ""){ packet.set_message("404 Not found\r\n", "Directory not found.\n"); return;}
+-		request.erase(0, path.length());
++		request.erase(0, newpath.length());
+ 		type = get_type(request);
+ 		if(type == 2) { packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
+ 		if(type == 0){
+@@ -144,8 +145,9 @@
+ 	}
+ 	else if(request.find("GET") == 0){
+ 		request.erase(0, 4);
+-		path += get_path(request);
+-		request.erase(0, path.length());
++		string newpath = get_path(request);
++		path += newpath;
++		request.erase(0, newpath.length());
+ 	  type = get_type(request);
+     if(type == 2) { packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
+ 		if(type == 0){
+@@ -173,8 +175,9 @@
+ 	}
+ 	else if(request.find("DELETE") == 0){
+ 		request.erase(0, 7);
+-		path += get_path(request);
+-		request.erase(0, path.length());
++		string newpath = get_path(request);
++		path += newpath;
++		request.erase(0, newpath.length());
+ 	  type = get_type(request);
+ 		if(type == 2){ packet.set_message("400 Bad Request\r\n", "Unknown type.\n"); return;}
+ 		if(type == 0){
