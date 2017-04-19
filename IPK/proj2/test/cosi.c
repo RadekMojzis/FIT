@@ -54,7 +54,7 @@ int main()
 
 	memset(buffer,0x00,60);
 	/*open socket*/
-	sd = socket(IPPROTO_RAW, SOCK_RAW, ETH_P_ARP);
+  sd = socket( AF_PACKET , SOCK_RAW , htons(ETH_P_ALL)) ;
 
 	if (sd == -1) {
 		perror("socket():");

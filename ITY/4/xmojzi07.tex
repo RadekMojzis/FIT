@@ -1,0 +1,39 @@
+%2/2 monografie (alespoò jedna musí být cizojazyèná),
+%3/3 elektronické dokumenty (online),
+%1/1 seriálovou publikaci (ti¹tìný èasopis èi sborník z konference),
+%2/2 èlánky v seriálové publikaci (pokud mo¾no zahranièní ti¹tìné èlánky),
+%2/2 kvalifikaèní práce (bakaláøské, diplomové nebo disertaèní).
+\documentclass[11pt,a4paper,titlepage]{article}
+\usepackage[left=2cm,text={17cm, 24cm},top=3cm]{geometry}
+\usepackage{times}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\bibliographystyle{czplain}
+\usepackage{etoolbox}
+\apptocmd{\thebibliography}{\raggedright}{}{}
+%\usepackage{hyperref}
+%\usepackage[hyphenbreaks]{breakurl}
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%FRONTPAGE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\thispagestyle{empty}
+\begin{center}
+
+\textsc{
+\Huge{Vysoké uèení technické v~Brnì \\}
+\huge{Fakulta informaèních technologií\\}
+}
+\vspace{\stretch{0.382}}
+
+
+\LARGE{Typografie a publikování -- 4. projekt \\}
+\Huge{Bibliografické citace\\}
+\vspace{\stretch{0.618}}
+
+\end{center}
+
+\Large{\today} \hfill Jiøí Matìjka
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

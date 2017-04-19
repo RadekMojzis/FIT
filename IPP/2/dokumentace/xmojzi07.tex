@@ -1,0 +1,61 @@
+\documentclass[a4paper, 10pt]{article}
+\usepackage[left=2cm,text={17cm, 24cm},top=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{times}
+
+\newcommand{\czq}[1]{\quotedblbase #1\textquotedblleft}
+\begin{document}
+
+\begin{flushleft}
+\begin{large}
+\begin{tabular}{ll}
+  Dokumentace úlohy SYN: Zvýraznění syntaxe v Pythonu 3 do IPP 2016/2017\\
+  Jméno a příjmení: Radek Mojžíš\\
+  Login: xmojzi07\\
+\end{tabular}
+\end{large}
+\end{flushleft}
+\section{Návrh}
+Nejprve proběhla dekompozice úlohy na podúlohy, čímž se konečné řešení
+značně zjednodušilo. Nejprve je potřeba načíst vstupní argumenty, následně
+zkontrolovat dostupnost vstupních a výstupních souborů, dále převést vstup
+na vnitřní interpretaci a nakonec samotné generování výstupu. Vzhledem k charakteru projektu nebylo zapotřebí implementovat vlastní třídy. Jejich použití by pravděpodobně pouze zbytečně znepřehlednilo a zesložitilo kód.
+\section{Implementace}
+Následuje stručný popis implementace jednotlivých částí projektu. Pro podrobnější informace můžete nahlédnout do samotného kódu. 
+
+\subsection{Načítání vstupních parametrů}
+Načítání vstupních parametrů probíhá ve funkci \texttt{geto\textunderscore ptions()}
+za použití funkce \texttt{getopts}. Funkce otevře vstupní soubory, 
+popřípadě ponechá \texttt{STDIN} a nastaví flagy pro volitelná nastavení.
+
+\subsection{Načtení a konverze vstupu}
+Načtení vstupu probíhá ve funkcích \texttt{parse\textunderscore fmt\textunderscore file()} a \texttt{format\textunderscore text()}.
+V \texttt{parse\textunderscore fmt\textunderscore file()} se načte řádek po řádku formátovací soubor (prázdné řádky jsou ignorovány)
+a rozdělí se na dvojice [regulární výraz, [seznam formátovacích příkazů]].
+Následně se provede převod regulárních výrazů specifikovaných projektem na 
+regulární výrazy, kterým rozumí python. To je zajištěno funkcí \texttt{normalise\textunderscore regex()}. Dále se také převádí formátovací řetězce na
+THML tagy které se objeví ve výstupu, což se provádí ve funkci \texttt{normalise\textunderscore format()}.
+
+\subsection{Syntaktická kontrola}
+Syntaktická kontrola probíhá částečně v \texttt{normalise\textunderscore regex()} kde se
+detekují nepovolené kombinace symbolů. Dále proběhne detekce neplatných barev
+a velikostí. Pokud se narazí na neznámý formátovací řetězec program je 
+ukončen s chybou.
+
+\subsection{Generování HTML elementů}
+Nejpre se vytvoří seznam dvojic \texttt{[[match\textunderscore span], [formats]]}, kde \texttt{match\textunderscore span} je pozice výsledku
+vyhledávání regulárního výrazu ve vstupním textu ve tvaru \texttt{[začátek, konec]} a \texttt{formats} 
+je seznam formátovacích řetězců. Potom se vygeneruje finální seznam všech tagů podle \texttt{match\textunderscore span}.
+Finální seznam je seznam dvojic \texttt{[index, tag]}, kde \texttt{index} je index, na který se má \texttt{tag} umístit.
+Tento seznam je řazen podle prvku \texttt{[index]}, kde levé tagy jsou při kolizi řazeny stabilně (pozdější vstup bude zařazen za prvky na stejném indexu)
+a právé tagy jsou řazeny opačně oproti stabilnímu řazení (pozdější vstup je zařazen před všechny prvky na stejném indexu).
+Toho je docíleno pomocným seznamem a použitím modulu \texttt{bisect}.
+Nakonec se všechny tagy postupně vloží na patřičnou pozici do výstupního řetězce.
+\subsection{Výstup}
+Před samotným zapsáním na výstup se případně před každý symbol \texttt{'\textbackslash n'} přidá
+\texttt{<br >}, podle stavu proměnné \texttt{brflag}, která je nastavena na \emph{True} v případě, že je zvoleno nastavení \texttt{--br}.
+\section{Závěr}
+Projekt nebyl nijak zásadně obtížný. Největší problém při implementaci byla možnost překrývání se tagů, kdy jeden tag může začít uvnitř dvojice tagů a končit až za ní. Tato funkcionalita samotná byla na implementaci asi nejsložitější z celého projektu.
+
+\end{document}

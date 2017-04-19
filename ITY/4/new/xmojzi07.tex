@@ -1,0 +1,113 @@
+%2/2 monografie (alespoň jedna musí být cizojazyčná),
+%3/3 elektronické dokumenty (online),
+%1/1 seriálovou publikaci (tištěný časopis či sborník z konference),
+%2/2 články v seriálové publikaci (pokud možno zahraniční tištěné články),
+%2/2 kvalifikační práce (bakalářské, diplomové nebo disertační).
+\documentclass[11pt,a4paper,titlepage]{article}
+\usepackage[left=2cm,text={17cm, 24cm},top=3cm]{geometry}
+\usepackage{times}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\bibliographystyle{czplain}
+\usepackage{etoolbox}
+\apptocmd{\thebibliography}{\raggedright}{}{}
+%\usepackage{hyperref}
+%\usepackage[hyphenbreaks]{breakurl}
+
+\providecommand{\czq}[1]{\quotedblbase #1\textquotedblleft}
+
+\begin{document}
+%%%%%%%%% ----- Headder
+\thispagestyle{empty}
+\begin{center}
+
+\textsc{
+\Huge{Vysoké učení technické v~Brně \\}
+\huge{Fakulta informačních technologií\\}
+}
+\vspace{\stretch{0.382}}
+ 
+
+\LARGE{Typografie a publikování, 4. projekt. \\}
+\Huge{Bibliografické citace\\}
+\vspace{\stretch{0.618}}
+
+\end{center}
+
+\Large{\today} \hfill Radek Mojžíš
+
+%%%%%%%%%%% ---- Actual document
+\newpage
+\setcounter{page}{1}
+\newpage
+\section{\LaTeX}
+\subsection{Co vlastně vůbec \LaTeX je?}
+\LaTeX je obsáhlá sada značkovacích příkazů, používaná s výkoným
+sázecím programem \TeX pro přípravu široké škály dokumentů,
+od vědeckých článků až po komplexní knihy.
+
+\LaTeX, stejně jako \TeX je otevřený softwarový projekt, dostupný zdarma.
+Jeho jádro je udržováno projektovou skupinou \LaTeX3 ale také využívá rozšíření 
+napsaná stovkami uživatelů/přispěvatelů a~to~i~se~všemi výhodami i~nevýhodami
+takové demokracie.
+\cite{book:guide-to-latex}
+
+\subsection{Kdy \LaTeX použít?}
+LaTeX, popř. TeX, se dá využít na~psaní téměř libovolného dokumentu.
+Od obyčejných stránkových referátů až po rozsáhlé seminární práce. 
+Výhody psaní dokumentů v LaTeXu ale pocítí hlavně ti, kteří píší
+nějakou vědeckou práci, kam musí vkládat zdrojové kódy, matematické
+rovnice atd.
+\cite{web:kdy-pouzit-latex}
+
+\section{Typografie}
+\subsection{časté chyby}
+Teď, když víme, co máme k~sázení dokumentů používat, je vhodné zmínit
+časté typografické chyby.
+
+Tečky, čárky, vykřičníky, otazníky neboli interpunkční znaménka. 
+Za všemi se dělá mezera. Před nimi nikoli.
+Jedinou výjimkou jsou tři tečky neboli výpustka. Můžeme je psát jako 3 tečky 
+\czq{...} nebo jako znak výpustka \czq{…}. Není v tom takový rozdíl. 
+\cite{web:chyby}
+
+Už nesčetněkrát mi někdo poslal podklady pro ceník,
+leták nebo brožuru a občas jsem narazil na to, že je cena špatně napsaná.
+Pokud totiž napíšete 1~599,-~Kč, je to špatně.
+
+Jak je to tedy správně? Jak správně typograficky
+zapíšeme cenu? Nejjednodušší způsob je 1~599~Kč, 
+sám to tak nejčastěji píšu. Pokud je z kontextu 
+jasné, o~jakou měnu se jedná, lze použít 1 599,-. 
+Existují ale i~další správné způsoby zápisu.
+\cite{web:zahadna-typografie-3-nejcastejsi-typograficke-chyby}
+
+U nejméně pěticiferných čísel se číslo člení do skupin po třech číslicích,
+a to na obou stranách od desetinné čárky, přičemž se mezi nimi píše nedělitelná
+mezera. U čtyřciferných čísel je situace složitější: letopočty se nedělí nikdy,
+ostatní čtyřciferná čísla se podle mnoha typografických příruček mají také dělit (např. \czq{7 530})
+\cite{book:prakticka-typografie}
+
+\section{Procesory}
+\subsection{Jak navrhnout procesor?}
+Navrhnout procesor je složitý úkol, z pravidla se to v dnešní době
+dělá pomocí jazyka VHDL. Procesor se skládá z registrů, aritmeticko-logické jednotky,
+modulu pro počítání v plovoucí desetinné čárce, řadiče a dalších komponent. \cite{bc:navrh-procesoru}
+
+\subsection{Zřetězení, více jader?}
+Procesory dovedou provádět více instrukcí najednou, a to nejen díky tomu, že mají více jader.
+Při zřetězeném spracování instrukcí se vykonává několik instrukcí najednou na jednom jádře.
+Jsou zde ovšem jisté hazardy, například datový, řídící nebo strukturální. \cite{bc:navrh-procesoru-CODAL}
+
+\subsection{AMD Ryzen}
+AMD se dostává z pozice druhořadého výrobce procesorů. Po době
+která se zdála už věčností, po roce očekávání je Ryzen konečně zde
+aby zatřásl s procesorovým stasuem quo.
+Výkon je lepší, než mnozí očekávali a Intel už začíná mluvit o více jádrech
+a větší flexibilitě v nadcházejících produktech ve své řadě procesorů.
+Milovníci AMD pochopitelně, již pomalu otevírají šampaňské aby oslavovali.
+Konkurence je tady.
+\cite{article:amd-ryzen}
+\newpage
+\bibliography{xmojzi07}
+\end{document}

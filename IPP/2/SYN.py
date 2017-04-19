@@ -5,6 +5,8 @@ import getopt
 import re
 import bisect
 
+#Global variables
+
 brflag = False
 help = False
 input_file = sys.stdin
@@ -12,7 +14,13 @@ output_file = sys.stdout
 fmt_file = ""
 current_html_tag = ""
 
+#function definitions
+
 def get_options():
+	"""
+		parses the options from command line, sets flags
+		and opens the input/output file
+	"""
 	global fmt_file
 	global input_file
 	global output_file
@@ -53,6 +61,13 @@ def get_options():
 #----------------------------------------------------------------------------------------------#		
 
 def normalise_regex(reg):
+	"""
+		reg is expected to be string
+		
+		first, escapes all "dangerous" characters in the original string
+		then replaces "regular expressions" - from fmt file with "regular" regular expressions
+		
+	"""
 	assert not re.search("\.\.", reg)
 	assert not re.search("\.\]", reg)
 	assert not re.search("\.\}", reg)
@@ -107,6 +122,10 @@ def normalise_regex(reg):
 
 # ------------------------------------------------------------------------ #
 def normalise_format(fmt):
+	"""
+		changes all format strings in fmt into actual html tags
+		fmt is a string
+	"""
 	fmt = re.sub("bold", "b", fmt)
 	fmt = re.sub("italic", "i", fmt)
 	fmt = re.sub("underline", "u", fmt)
@@ -127,8 +146,13 @@ def normalise_format(fmt):
 # ------------------------------------------------------------------------ #
 
 def parse_fmt_file(fmt_file):
-	parsed_file = [re.split("\t+", line, 1) for line in fmt_file]
-			
+	"""
+		reads the file and parses it into list of
+		[regex, [format]] pairs
+		also tests for syntax errors
+	"""
+	parsed_file = [re.split("\t+", line, 1) for line in fmt_file if not line.isspace()]
+	
 	try:
 		parsed_fmt = [[normalise_regex(reg), normalise_format(fmt)] for reg, fmt in parsed_file]
 	except Exception:
@@ -156,27 +180,32 @@ def parse_fmt_file(fmt_file):
 # ------------------------------------------------------------------------ #
 	
 def format_text(fmt, file_in):
+	"""
+		fmt is list of [reges, [format]] pairs - the output of parse_fmt_file()
+		file in is input file
+		
+		places all format tags in the right positions
+	"""
 	global current_html_tag
 	line_separator = "\n"
 	
 	file_str = file_in.read()
 	
 	list_of_tag_pairs = []
-	
+	# first, searches for all matches for a given regular expression
+	# if it matches it saves the span of the given match and how to format it
 	for what, how in fmt:
 		if re.search(what, file_str):
 			for how_exactly in how:
-				for cosi in re.finditer(what, file_str, re.DOTALL):
-					if cosi.group(0):
-						list_of_tag_pairs.append((list(cosi.span()), how_exactly))
-	'''
-	for cosi in fmt:
-		print(cosi)
-	'''
-	
+				for match in re.finditer(what, file_str, re.DOTALL):
+					if match.group(0):
+						list_of_tag_pairs.append((list(match.span()), how_exactly))
+	# list_of_tag_pairs is [[from, to], how]
 	list_of_tags = []
 	
 	order = []
+	#puts all tags in a list in correct order, left tags use stable sorting
+	#right tags use oposite of stable, and thus creates a final list of all tags
 	for item in list_of_tag_pairs:
 		tag = [item[0][0], "<" + item[1] + ">"]
 		tag2 = [item[0][1], "</" + re.split(" ", item[1])[0] + ">"]
@@ -191,8 +220,9 @@ def format_text(fmt, file_in):
 		index = bisect.bisect_left(order, tag2_index)
 		order.insert(index, tag2_index)
 		list_of_tags.insert(index, tag2)
-		
+	#list of tags is now [index, tag] pairs
 	shift = 0
+	#puts all the tags in position...
 	for tag in list_of_tags:
 		file_str = file_str[:tag[0] + shift] + tag[1] + file_str[tag[0] + shift:]
 		shift += len(tag[1])
@@ -201,6 +231,9 @@ def format_text(fmt, file_in):
 	
 
 def close_IO():
+	"""
+		Closes all input and output files
+	"""
 	try:
 		fmt_file.close()
 	except Exception:
@@ -214,6 +247,8 @@ def close_IO():
 	except Exception:
 	  pass
 
+# - End of function declarations
+		
 try:
 	get_options()
 except AssertionError:
@@ -232,6 +267,13 @@ except Exception as e:
 	close_IO()
 	exit(100)
 
+if help:
+		print("Usage: syn --input=[input_file] --format=[format_file]")
+		print("Optional settings --output=[output_file] --help --br")
+		print("Have an amazing day and do not forget to smile :].")
+		close_IO()
+		exit(0)
+		
 try:
 	formated_text = format_text(parse_fmt_file(fmt_file), input_file)
 except Exception as e:
@@ -241,5 +283,5 @@ except Exception as e:
 
 if(brflag):
 	formated_text = re.sub("\n", "<br />\n", formated_text)
-output_file.write(formated_text )
+output_file.write(formated_text)
 close_IO()
