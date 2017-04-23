@@ -63,10 +63,6 @@ int main()
 			perror("sth funky is going on");
 		}
   }
-	
-	
-	
-	
 }
 
 

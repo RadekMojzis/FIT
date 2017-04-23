@@ -83,7 +83,7 @@ int main(){
     else {
 			perror("sth funky is going on");
 		}
-		i++;
+		it++;
   }
 }
 

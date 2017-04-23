@@ -60,7 +60,7 @@ int main(void) {
     printf("Server started, entering initialiation phase...\n");
 
     /*open socket*/
-    s = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    s = socket(AF_INET, SOCK_RAW, 0);
     if (s == -1) {
         perror("socket():");
         exit(1);

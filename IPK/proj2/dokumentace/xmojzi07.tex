@@ -1,0 +1,141 @@
+\documentclass[11pt,a4paper,titlepage]{article}
+\usepackage[left=2cm,text={17cm, 24cm},top=3cm]{geometry}
+\usepackage{times}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\bibliographystyle{czplain}
+\usepackage{etoolbox}
+\usepackage{scrextend}
+\apptocmd{\thebibliography}{\raggedright}{}{}
+%\usepackage{hyperref}
+%\usepackage[hyphenbreaks]{breakurl}
+
+\providecommand{\czq}[1]{\quotedblbase #1\textquotedblleft}
+
+\begin{document}
+%%%%%%%%% ----- Headder
+\thispagestyle{empty}
+\begin{center}
+
+\textsc{
+\Huge{Vysoké učení technické v~Brně \\}
+\huge{Fakulta informačních technologií\\}
+}
+\vspace{\stretch{0.382}}
+ 
+
+\LARGE{ Počítačové komunikace a sítě 2. projekt. \\}
+\Huge{ARP Scanner\\}
+\vspace{\stretch{0.618}}
+
+\end{center}
+
+\Large{\today} \hfill Radek Mojžíš
+
+%%%%%%%%%%% ---- Actual document
+\newpage
+\tableofcontents
+\newpage
+\setcounter{page}{1}
+\newpage
+\section{ARP scanner}
+Následuje stručný výtah informací z nastudované literatury.
+\subsection{K čemu ARP slouží}
+The Address Resolution Protocol (zkratka ARP) je komunikační protokol sloužící k 
+spojení adresy síťové úrovně s adresou fyzické úrovně.
+Neboli mapování síťových adres (např. IPv4 adres) na fyzické adresy (také známy jako MAC adresy).
+\cite{web:arp}
+
+\subsection{Základní princip ARP scanneru}
+Na broadcastovou adresu dané podsítě se pošle ARP zpráva s dotazem, \czq{kdo} má dotazovanou adresu 
+síťového protokolu (dále \czq{IP adresu}). Dále se čeká na příchozí ARP zprávy
+s odpovědí na dotaz. Toto se provede pro každou požadovanou IP adresu.
+
+\subsection{Struktura ARP zprávy}
+Hlavička ARP zprávy je 26 bytů tlouhá a obsahuje následující informace. \cite{web:arp}
+
+\begin{labeling}{Byte 24-27:sth} 
+\item [Byte 0-1:] Typ systémového protokolu (př: Ethernet je 1).
+\item [Byte 2-3:] Typ síťového protokolu (př: IPv4 je 0x0800).
+\item [Byte 4:] Délka (v bytech) hardwarové adresy (Pro Ethernet 6).
+\item [Byte 5:] Délka (v bytech) adresy protokolové úrovně (pro IPv4 4).
+\item [Byte 6-7:] Operace (pro žádost 1, pro odpověď 2).
+\item [Byte 8-13:] Hardwarová adresa odesilatele.
+\item [Byte 14-17:] IP adresa odesilatele.
+\item [Byte 18-23:] Hwrdwarová adresa příjemce (v ARP žádosti ignorováno).
+\item [Byte 24-27:] IP adresa příjemce.
+\end{labeling}
+
+\section{Implementace}
+Následuje stručný popis implementace.
+\subsection{Návrh}
+Úloha byla řešena v jazyce C, neboť nejde onijak veliký projekt a také proto, že by se v něm
+velmi často při práci s RAW sockety v c++ používal \czq{reinterpret cast}, což by značně přidalo
+na nečitelnosti kódu.
+
+\subsection{Popis činnosti}
+Program v pořadí dělá následující operace.
+\subsubsection{Načtění argumentů}
+Nejprve se načtou vstupní argumenty, zkontroluje se jejich počet a uloží se jméno požadovaného rozhraní.
+\subsubsection{Inicializace socketu}
+Komunikační socket se vytváří voláním funkce socket()\\
+\texttt{socket(AF\textunderscore PACKET, SOCK\textunderscore RAW, htons(ETH\textunderscore P\textunderscore ALL));}.
+\subsubsection{Získávání informací o rozhraní}
+Následně se pomocí série volání funkce
+\texttt{ioctl()} načtou potřebné \textbf{informace o požadovaném rozhraní}, zejména jsou to informace jako je \textbf{MAC adresa} rozhraní, 
+\textbf{IP adresa} v dané síti a \textbf{maska podsítě}.
+\cite{web:ioctl}
+\subsubsection{Vytvoření ethernetového rámce}
+Dále se do bytového pole vytvoří ethernetový rámec.
+Rámec má na začátku Ethernetovou hlavičku a pokračuje potom samotnou ARP žádostí. Na~konci je 
+doplněn do 64 bytů nulami, neboť cokoliv menšího, než 64 bytů je bráno jako fragment komunikace
+a \czq{zahazuje}  se.\\
+Ethernetová hlavička má 14 bytů a obsahuje hardwarovou adresu příjemce (6 bytů, pro broadcast je to \texttt{0xffff.ffff.ffff})
+a MAC adresu odesilatele (6 bytová MAC adresa rozhraní) a 2 byty na protokolový typ, což je pro ARP \texttt{0x0806}.\\
+Arp hlavičku plním pomocí datové struktury s nastavením
+\texttt{\textunderscore\textunderscore atribute\textunderscore\textunderscore((packed))},
+pro zrušení implicitního zarovnávání paměti.
+\subsubsection{Odesílání žádosti}
+Po sestavení žádosti se program rozdělí na dvě vlákna. První vlákno odesílá ARP žádosti na každou možnou IP adresu
+dané sítě.\\
+\subsubsection{Přijímání odpovědí}
+Druhé vlákno potom kontroluje příchozí zprávy a ve chvíli, kdy přijde odpověď na ARP žádost 
+(zpráva ve které je v ARP hlavičcce v poli \czq{operace} 2), uloží se hodnoty IP a MAC adresy zařízení z odpovědi do pole.\\
+Po uplynutí času 5 sekund, popřípadě po zaslání odpovídajícího signálu se zapíše mapování
+ve formátu XML do souboru a program končí.
+
+\subsubsection{Formát výstupu}
+Formát xml výstupu je následující:\\
+\texttt{<?xml version="1.0"?>}\\
+\texttt{<!DOCTYPE devices [}\\
+\texttt{<!ELEMENT devices (host+)>}\\
+\texttt{<!ELEMENT host (ipv4)>}\\
+\texttt{<!ELEMENT ipv4 (\#PCDATA)>}\\
+\texttt{<!ATTLIST host mac CDATA \#REQUIRED>}\\
+\texttt{]>}\\
+
+\section{Použití}
+Program se spouští se dvěma povinými parametry, a to následovně.\\
+\texttt{./ipk-scanner -i <jméno rozhraní> -f <výstupní soubor>}\\
+Jméno rozhraní určuje, která síť, na kterou je zařízení připojeno bude skenována.
+Výstupní soubor je jméno výstupního souboru do kterého bude zapsán výstup programu
+ve formátu XML.
+Navíc je třeba jej spouštět s \textbf{právy superuživatele}.
+\subsection{Příklad}
+Příkaz: \\
+\texttt{sudo ./ipk-scanner -i enp4s0f2 -f devices.xml}\\
+Vypíše mapování IP adres na MAC adresy ze sítě na kterou je připojeno 
+rozhraní \texttt{enp4s0f2} do souboru \texttt{devices.xml}.\\
+Obsah souboru devices.xml bude například následující:\\
+\texttt{<?xml version="1.0" encoding="UTF-8"?>}\\
+\texttt{<devices>}\\
+\texttt{<host mac="0050.56ad.78ee">}\\
+\texttt{<ipv4>147.229.196.2</ipv4>}\\
+\texttt{</host>}\\
+\texttt{<host mac="0050.5693.03cb">}\\
+\texttt{<ipv4>147.229.196.3</ipv4>}\\
+\texttt{</host>}\\
+\texttt{</devices>}\\
+
+\bibliography{xmojzi07}
+\end{document}

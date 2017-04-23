@@ -54,13 +54,13 @@ int main()
 
 	memset(buffer,0x00,60);
 	/*open socket*/
-  sd = socket( AF_PACKET , SOCK_RAW , htons(ETH_P_ALL)) ;
+	sd = socket( AF_INET, SOCK_RAW , IPPROTO_TCP );
 
 	if (sd == -1) {
 		perror("socket():");
 		exit(1);
 	}
-	strcpy(ifr.ifr_name,"eth1.30");
+	strcpy(ifr.ifr_name,"wlp3s0");
 /*retrieve ethernet interface index*/
 	if (ioctl(sd, SIOCGIFINDEX, &ifr) == -1) {
 		perror("SIOCGIFINDEX");
