@@ -94,7 +94,7 @@ void you_should_get_help(){
 }
 
 int main(int argc, char *argv[]) {
-	if(argc != 5 || !strcmp(argv[1], "i") || !strcmp(argv[3], "f")){
+	if(argc != 5 || strcmp(argv[1], "-i") || strcmp(argv[3], "-f")){
 		you_should_get_help();
 		return 1;
 	}

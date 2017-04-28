@@ -1,0 +1,18 @@
+﻿  Building Custom Rule D:/FIT/IZG/CMakeLists.txt
+  CMake does not need to re-run because D:/FIT/IZG/build/CMakeFiles/generate.stamp is up-to-date.
+  gpu.cpp
+  conformanceTests.cpp
+  performanceTest.cpp
+  Generating Code...
+  student_cpu.c
+  student_pipeline.c
+  student_shader.c
+  linearAlgebra.c
+  main.c
+  camera.c
+  bunny.c
+  mouseCamera.c
+  swapBuffers.c
+  triangleExample.c
+  Generating Code...
+  izgProjekt2016.vcxproj -> D:\FIT\IZG\build\Release\izgProjekt2016.exe
