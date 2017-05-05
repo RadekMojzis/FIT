@@ -654,6 +654,7 @@ float distanceTo2DLine(
     Vec3 const*const line  ,
     Vec2 const*const vertex);
 
+		
 /**
  * @brief This function reflect incident vector using normal vector
  *

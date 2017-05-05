@@ -50,7 +50,7 @@
  * @brief This value represents maximal number of triangles that can be created by clipping of single input triangle.
  * This value is overestimated.
  */
-#define MAX_CLIPPED_TRIANGLES 64
+#define MAX_CLIPPED_TRIANGLES 5
 
 
 

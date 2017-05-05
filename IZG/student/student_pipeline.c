@@ -32,6 +32,7 @@ VertexIndex gpu_computeGLVertexID(
   /// Indexing je aktivní, pokud buffer indexů není NULL.
   //(void)indices;
   //(void)vertexShaderInvocation;
+	if(indices == NULL) return vertexShaderInvocation;
 	return indices[vertexShaderInvocation];
 	//return indices[vertexShaderInvocation/3][vertexShaderInvocation%3];
 }
@@ -43,10 +44,13 @@ void const* gpu_computeVertexAttributeDataPointer(
   /// Tato funkce počíta přesný ukazatel na data vertex atributu.
   /// Dejte si pozor na ukazatelovou aritmetiku, ukazatel musí být na byte přesně.
   /// Správná adresa se odvíjí od adresy bufferu, offsetu čtěcí hlavy, čísla vrcholu a kroku čtecí hlavy.
-  assert(head != NULL);
-  (void)head;
-  (void)gl_VertexID;
-  return (void *)((char *)head->buffer + head->offset + gl_VertexID * head->stride);
+
+	assert(head != NULL);
+  //(void)head;
+  //(void)gl_VertexID;
+	if(!head->enabled)
+		return NULL;
+  return (void *)((char*)head->buffer + head->offset + gl_VertexID * head->stride);
 }
 
 void gpu_runVertexPuller(
@@ -68,8 +72,8 @@ void gpu_runVertexPuller(
   //(void)puller;
   //(void)vertexShaderInvocation;
 	for(int i = 0; i < MAX_ATTRIBUTES; i++)
-		GPUVertexPullerOutput[i] = 	gpu_computeVertexAttributeDataPointer(
-																		puller->heads[i], 
+		output->attributes[i] = gpu_computeVertexAttributeDataPointer(
+																		&puller->heads[i], 
 																		gpu_computeGLVertexID(
 																				puller->indices, 
 																				vertexShaderInvocation
@@ -89,12 +93,12 @@ void gpu_runPrimitiveAssembly(
   assert(nofPrimitiveVertices <= VERTICES_PER_TRIANGLE);
   assert(puller               != NULL);
   assert(vertexShader         != NULL);
-  (void)gpu;
+  /*(void)gpu;
   (void)primitive;
   (void)nofPrimitiveVertices;
   (void)puller;
   (void)baseVertexShaderInvocation;
-  (void)vertexShader;
+  (void)vertexShader;*/
   /// \todo Naimplementujte funkci jednotky sestavující primitiva.
   /// Vašim úkolem je spustit vertex puller a dodaný vertex shader nad každým vrcholem primitiva.
   /// Funkce by měla spustit vertex puller/vertex shader N krát (podle množství vrcholů primitiva).
@@ -109,6 +113,33 @@ void gpu_runPrimitiveAssembly(
   /// <b>Seznam struktur, které jistě využijete:</b>
   ///  - GPUVertexPullerOutput()
   ///  - GPUVertexShaderInput()
+	primitive->nofUsedVertices = nofPrimitiveVertices;
+	primitive->types[0] = ATTRIB_VEC3;
+	primitive->types[1] = ATTRIB_VEC3;
+	primitive->types[2] = ATTRIB_EMPTY;
+	primitive->types[3] = ATTRIB_EMPTY;
+	primitive->interpolations[0] = SMOOTH;
+	primitive->interpolations[1] = SMOOTH;
+
+	
+	for(int i = 0; i < nofPrimitiveVertices; i++){
+		GPUVertexPullerOutput vtx;
+		gpu_runVertexPuller(&vtx, puller, baseVertexShaderInvocation + i);
+		
+		GPUVertexShaderInput shader_in;
+		shader_in.attributes = &vtx;
+		shader_in.gl_VertexID = gpu_computeGLVertexID(puller->indices, baseVertexShaderInvocation + i);
+		
+		vertexShader(&primitive->vertices[i], &shader_in, gpu);
+		
+	}
+	return;
+	/*struct GPUPrimitive{
+		GPUVertexShaderOutput vertices[VERTICES_PER_TRIANGLE];///< vertices of the primitive
+		size_t                nofUsedVertices                ;///< number of used vertices 1 - point, 2 - line segment, 3 - triangle
+		AttributeType         types[MAX_ATTRIBUTES]          ;///< types of vertex attributes
+		InterpolationType     interpolations[MAX_ATTRIBUTES] ;///< interpolation types of vertex attributes
+	};*/
 }
 
 /// @}
@@ -643,6 +674,11 @@ void gpu_computeLineBorders(
     gpu_restrictLineBorders(minX,maxX,y,triangleLines+edge);
 }
 
+float distance(Vec2 const*const a, Vec2 const*const b){
+	return sqrt((a->data[0] - b->data[0])*(a->data[0] - b->data[0])
+						 +(a->data[1] - b->data[1])*(a->data[1] - b->data[1]));
+}
+
 /// \addtogroup gpu_side
 /// @{
 
@@ -661,10 +697,25 @@ void gpu_computeScreenSpaceBarycentrics(
   assert(pixelCenter != NULL);
   assert(vertices    != NULL);
   assert(lines       != NULL);
-  (void)coords;
+  /*(void)coords;
   (void)pixelCenter;
   (void)vertices;
-  (void)lines;
+  (void)lines;*/
+	// coords u v w are
+	// u = area_of(ABP)/area_of(ABC)
+	// v = area_of(ACP)/area_of(ABC)
+	// and u + v + w = 1 => w = 1 -u -v
+	
+	float dist_ab = distance(&vertices[0], &vertices[1]);
+	float dist_bc = distance(&vertices[1], &vertices[2]);
+	
+	float S_ABP = dist_ab * distanceTo2DLine(&lines[0], pixelCenter);
+	float S_BCP = dist_bc * distanceTo2DLine(&lines[1], pixelCenter);
+	float S_ABC = dist_ab * distanceTo2DLine(&lines[0], &vertices[2]);
+	
+	coords->data[2] = S_ABP / S_ABC;
+	coords->data[0] = S_BCP / S_ABC;
+	coords->data[1] = 1 - coords->data[2] - coords->data[0];
 }
 
 /// @}

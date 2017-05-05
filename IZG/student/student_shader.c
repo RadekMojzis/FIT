@@ -7,7 +7,7 @@
 
 #include<math.h>
 #include<assert.h>
-
+#include<stdio.h>
 #include"student/student_shader.h"
 #include"student/gpu.h"
 #include"student/uniforms.h"
@@ -44,9 +44,35 @@ void phong_vertexShader(
   ///  - shader_interpretUniformAsMat4()
   ///  - vs_interpretInputVertexAttributeAsVec3()
   ///  - vs_interpretOutputVertexAttributeAsVec3()
-  (void)output;
-  (void)input;
-  (void)gpu;
+	Vec3 *position;
+	Vec3 *normal;
+	position = vs_interpretInputVertexAttributeAsVec3(gpu, input, 0);
+	normal   = vs_interpretInputVertexAttributeAsVec3(gpu, input, 1);
+	
+	Uniforms const Handle = gpu_getUniformsHandle(gpu);//gpu
+	UniformLocation const VMUL = getUniformLocation(gpu, "viewMatrix");
+	UniformLocation const PMUL = getUniformLocation(gpu, "projectionMatrix");
+	
+	Mat4 const*const view = shader_interpretUniformAsMat4(Handle, VMUL);
+	Mat4 const*const proj = shader_interpretUniformAsMat4(Handle, PMUL);
+	
+	//craft final transformation
+	
+	Mat4 workBench;
+  multiply_Mat4_Mat4(&workBench, proj, view);
+	
+	// transform
+	Vec4 vtx_poss;
+  copy_Vec3Float_To_Vec4(&vtx_poss, position, 1.f);
+	multiply_Mat4_Vec4(&output->gl_Position, &workBench, &vtx_poss);
+  
+	
+	
+	Vec3 *out0 = vs_interpretOutputVertexAttributeAsVec3(gpu, output, 0);
+	Vec3 *out1 = vs_interpretOutputVertexAttributeAsVec3(gpu, output, 1);
+	
+	copy_Vec3(out0, position);
+	copy_Vec3(out1, normal);
 }
 
 void phong_fragmentShader(
@@ -74,9 +100,69 @@ void phong_fragmentShader(
   /// <b>Seznam funkcí, které jistě využijete</b>:
   ///  - shader_interpretUniformAsVec3()
   ///  - fs_interpretInputAttributeAsVec3()
-  (void)output;
-  (void)input;
-  (void)gpu;
+	
+	output->depth = input->depth;
+	init_Vec4(&output->color, 0, 256, 0, 1.0f);
+	// -----------------------------------------------------
+	//------- Get light and camera
+	Uniforms const Handle = gpu_getUniformsHandle(gpu);//gpu
+	UniformLocation const LPU  = getUniformLocation(gpu, "lightPosition");
+	UniformLocation const CPU = getUniformLocation(gpu, "cameraPosition");
+	Vec3 const*const light_poss  = shader_interpretUniformAsVec3(Handle, LPU);
+	Vec3 const*const camera_poss = shader_interpretUniformAsVec3(Handle, CPU);
+	Vec3 const*const vtx_poss = fs_interpretInputAttributeAsVec3(gpu, input, 0);
+	
+	Vec3 light;
+	Vec3 camera;
+	sub_Vec3(&light, light_poss, vtx_poss);
+	normalize_Vec3(&light, &light);
+	sub_Vec3(&camera, camera_poss, vtx_poss);
+	normalize_Vec3(&camera, &camera);
+	
+	// ------ Get normal
+	Vec3 const*const vtx_vect = fs_interpretInputAttributeAsVec3(gpu, input, 1);
+	Vec3 vtx_norm;
+	normalize_Vec3(&vtx_norm, vtx_vect);
+	
+	float diffuse = vtx_norm.data[0] * light.data[0] +
+									vtx_norm.data[1] * light.data[1] +
+									vtx_norm.data[2] * light.data[2];
+	if(diffuse > 1)
+		diffuse = 0;
+	
+	
+	init_Vec4(&output->color, 0, 1, 0, 0);
+	multiply_Vec4_Float(&output->color, &output->color, diffuse);
+	
+	
+	Vec3 R;
+	multiply_Vec3_Float(&R, &vtx_norm, 2*diffuse);
+	sub_Vec3(&R, &R, &light);
+	
+	float specular = R.data[0] * camera.data[0] +
+									 R.data[1] * camera.data[1] +
+									 R.data[2] * camera.data[2];
+
+	if(specular < 0)
+		specular = 0;
+	if(specular > 1){
+		specular = 1;
+	}
+	// aka specular ** 40
+	specular *= specular;
+	specular *= specular;
+	specular *= specular;
+	float spec_to_8 = specular;
+	specular *= specular;
+	specular *= specular;
+	specular *= spec_to_8;
+
+	Vec4 spec_color;
+	init_Vec4(&spec_color, 1, 1, 1, 0);
+	multiply_Vec4_Float(&spec_color, &spec_color, specular);
+	add_Vec4(&output->color, &output->color, &spec_color);
+	
+	output->color.data[3] = 1.0f;
 
 }
 

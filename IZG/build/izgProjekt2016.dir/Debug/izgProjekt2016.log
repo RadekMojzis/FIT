@@ -1,19 +1,14 @@
-﻿  Building Custom Rule D:/FIT/IZG/CMakeLists.txt
-  CMake does not need to re-run because D:/FIT/IZG/build/CMakeFiles/generate.stamp is up-to-date.
-  gpu.cpp
-  conformanceTests.cpp
-  performanceTest.cpp
-  Generating Code...
-  student_cpu.c
-  student_pipeline.c
-  student_shader.c
+﻿  triangleExample.c
+  camera.c
   linearAlgebra.c
   main.c
-  camera.c
-  bunny.c
   mouseCamera.c
+  student_cpu.c
+  student_pipeline.c
+D:\FIT\IZG\student\student_pipeline.c(679): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+  student_shader.c
+D:\FIT\IZG\student\student_shader.c(49): warning C4090: '=': different 'const' qualifiers
+D:\FIT\IZG\student\student_shader.c(50): warning C4090: '=': different 'const' qualifiers
   swapBuffers.c
-  triangleExample.c
   Generating Code...
-MSVCRTD.lib(initializers.obj) : warning LNK4098: defaultlib 'msvcrt.lib' conflicts with use of other libs; use /NODEFAULTLIB:library
   izgProjekt2016.vcxproj -> D:\FIT\IZG\build\Debug\izgProjekt2016.exe

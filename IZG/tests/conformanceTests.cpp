@@ -189,11 +189,14 @@ TEST_CASE("gpu_computeScreenSpaceBarycentrics should compute barycentric coordin
     construct2DLine(lines+v,vertices+v,vertices+((v+1)%VERTICES_PER_TRIANGLE));
 
   init_Vec2(&pixelCenter,333.f,334.f);
+
   gpu_computeScreenSpaceBarycentrics(&coords,&pixelCenter,vertices,lines);
-  REQUIRE(equalFloats(coords.data[0],0.560832f));
+	REQUIRE(equalFloats(coords.data[0],0.560832f));
   REQUIRE(equalFloats(coords.data[1],0.071567f));
   REQUIRE(equalFloats(coords.data[2],0.367601f));
-
+	
+	
+	
   init_Vec2(&pixelCenter,300.f,277.f);
   gpu_computeScreenSpaceBarycentrics(&coords,&pixelCenter,vertices,lines);
   REQUIRE(equalFloats(coords.data[0],0.638112f));
@@ -435,11 +438,11 @@ TEST_CASE("Application should render correct image."){
     std::cerr<<"ERROR: reference image: \""<<groundTruthFile<<"\" is corrupt!"<<std::endl;
     REQUIRE(groundTruth != nullptr);
   }
-
+	float meanSquareError = 0;
   if(
       surface->w == groundTruth->w &&
       surface->h == groundTruth->h){
-    float meanSquareError = 0;
+    
     for(int32_t y = 0; y < surface->h; ++y)
       for(int32_t x = 0; x < surface->w; ++x)
         for(int32_t c = 0; c < 3; ++c){
@@ -451,7 +454,7 @@ TEST_CASE("Application should render correct image."){
     meanSquareError /= (float)(surface->w * surface->h * 3);
     REQUIRE(meanSquareError < 40.f);
   }
-
+	std::cout << "Chyba zleho ctverce: " << meanSquareError << std::endl;
 
   SDL_FreeSurface(groundTruth);
   

@@ -37,7 +37,11 @@ struct PhongVariables{
   GPU gpu;
   ///This variable contains light poistion in world-space.
   Vec3 lightPosition;
+	VertexPullerID puller;
+	BufferID vertices;
+	BufferID indices;
 
+	ProgramID program;
 
 }phong;///<instance of all global variables for triangle example.
 
@@ -55,20 +59,49 @@ void phong_onInit(int32_t width,int32_t height){
   init_Vec3(&phong.lightPosition,100.f,100.f,100.f);
 	
   // --------------------------- The work of Mozes ------------------------------- //
-	/*cpu_reserveUniform(
-      phong.gpu, //gpu
-      "projectionMatrix" , //uniform name
-      UNIFORM_MAT4       );//uniform type
-
-  cpu_reserveUniform(
-      phong.gpu, //gpu
-      "viewMatrix"       , //uniform name
-      UNIFORM_MAT4       );//uniform type
-			
-			
-	*/
+	
+	// ---------------------------------------------
+	// ----------UNIFORMS
+	cpu_reserveUniform(phong.gpu,	"projectionMatrix", UNIFORM_MAT4);
+  cpu_reserveUniform(phong.gpu, "viewMatrix"      , UNIFORM_MAT4);
+	cpu_reserveUniform(phong.gpu, "lightPosition"   , UNIFORM_VEC3);
+	cpu_reserveUniform(phong.gpu, "cameraPosition"  , UNIFORM_VEC3);
+	// ---------------------------------------------
+	// ----------PROGRAM
+	phong.program = cpu_createProgram(phong.gpu);
+	int kocka = 0;
+	// ---------------------------------------------
+	// ----------SHADERS
+	cpu_attachVertexShader	(phong.gpu, phong.program, phong_vertexShader);
+	cpu_attachFragmentShader(phong.gpu, phong.program, phong_fragmentShader);
+	// ---------------------------------------------
+	// ----------NO IDEA WHAT THIS IS
+	cpu_setAttributeInterpolation(phong.gpu, phong.program, 0, ATTRIB_VEC3, SMOOTH);
+	cpu_setAttributeInterpolation(phong.gpu, phong.program, 1, ATTRIB_VEC3, SMOOTH);
+	// ---------------------------------------------
+	// ----------LOAD BUNNY
+	cpu_createBuffers(phong.gpu, 2, &phong.vertices);
+	cpu_bufferData(
+      phong.gpu     , //gpu
+      phong.vertices, //buffer id
+      sizeof(float)* 1048 *6, // size of the bunny
+			bunnyVertices);
+	// ---------------------------------------------
+	// ----------LOAD INDEXING
+	cpu_bufferData(
+      phong.gpu,
+      phong.indices,
+      sizeof(float)*2092*6, // size index list
+			bunnyIndices);
+	cpu_createVertexPullers(phong.gpu, 1, &phong.puller);	
+	cpu_setVertexPullerHead(phong.gpu, phong.puller, 0, phong.vertices, sizeof(float)*0, sizeof(BunnyVertex));
+	cpu_setVertexPullerHead(phong.gpu, phong.puller, 1, phong.vertices, sizeof(float)*3, sizeof(BunnyVertex));
+  cpu_enableVertexPullerHead(phong.gpu, phong.puller, 0);	
+	cpu_enableVertexPullerHead(phong.gpu, phong.puller, 1);
+	cpu_setIndexing(phong.gpu, phong.puller, phong.vertices + 1, 2);
 	// --------------------------- The end of storry --------------------------------//
-  /// \todo Doprogramujte inicializační funkci.
+  
+	/// \todo Doprogramujte inicializační funkci.
   /// Zde byste měli vytvořit buffery na GPU, nahrát data do bufferů, vytvořit vertex puller a správně jej nakonfigurovat,
 	///	vytvořit program, připojit k němu shadery a nastavit interpolace.
   /// Také byste zde měli zarezervovat unifromní proměnné pro matice, pozici kamery, světla a další vaše proměnné.
@@ -131,9 +164,25 @@ void phong_onDraw(SDL_Surface*surface){
   ///  - cpu_uniform3f()
   ///  - cpu_drawTriangles()
   ///  - getUniformLocation()
-
-
-  // copy image from gpu to SDL surface
+	// -------------------------------- The work of Mozes --
+	// ---------- Use program...
+	cpu_useProgram(phong.gpu, phong.program);
+	// ---------- Bind puller
+	cpu_bindVertexPuller(phong.gpu, phong.puller);
+  // ---------- Upload uniforms
+	UniformLocation const VMU = getUniformLocation(phong.gpu, "viewMatrix");
+  UniformLocation const PMU = getUniformLocation(phong.gpu, "projectionMatrix");
+  UniformLocation const LPU = getUniformLocation(phong.gpu, "lightPosition");
+	UniformLocation const CPU = getUniformLocation(phong.gpu, "cameraPosition");
+  
+  cpu_uniformMatrix4fv(phong.gpu, VMU, (float*)&viewMatrix);
+	cpu_uniformMatrix4fv(phong.gpu, PMU, (float*)&projectionMatrix);
+	cpu_uniform3f(phong.gpu, LPU, phong.lightPosition.data[0], phong.lightPosition.data[1], phong.lightPosition.data[2]);
+	cpu_uniform3f(phong.gpu, CPU, cameraPosition.data[0], cameraPosition.data[1], cameraPosition.data[2]);
+	// ---------- Draw...
+	cpu_drawTriangles(phong.gpu, 2092*3);
+		
+	// copy image from gpu to SDL surface
   cpu_swapBuffers(surface,phong.gpu);
 }
 
